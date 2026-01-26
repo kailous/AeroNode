@@ -1,0 +1,6 @@
+# Ignore local libraries
+libraries/
+libraries
+
+# macOS
+.DS_Store
