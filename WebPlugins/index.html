@@ -15,27 +15,53 @@
     </div>
 
     <div class="panel collapsed" id="side">
+        <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:20px; letter-spacing:2px;">
+            <span>CONFIG</span>
+            <span onclick="setS()" style="cursor:pointer; opacity:0.5">CLOSE</span>
+        </div>
+        
         <form action="/save" method="POST">
             <div class="section">NETWORK</div>
             <div class="row"><span>SSID</span><input type="text" name="ssid" value="%SSID%" style="width:120px"></div>
+            
             <div class="section">FILTERING</div>
             <div class="row"><span>DLPF</span>
-                <select name="dlpf"><option value="0" %SEL_0%>OFF</option><option value="2" %SEL_2%>MID</option><option value="6" %SEL_6%>HIGH</option></select>
+                <select name="dlpf" style="width:132px">
+                    <option value="0" %SEL_0%>OFF</option>
+                    <option value="2" %SEL_2%>MID</option>
+                    <option value="6" %SEL_6%>HIGH</option>
+                </select>
             </div>
+
             <div class="section">INVERSION</div>
             <div class="row"><span>PITCH (X)</span><label class="switch"><input type="checkbox" name="inv_gx" %CHK_GX%><span class="slider"></span></label></div>
             <div class="row"><span>ROLL (Y)</span><label class="switch"><input type="checkbox" name="inv_gy" %CHK_GY%><span class="slider"></span></label></div>
             <div class="row"><span>YAW (Z)</span><label class="switch"><input type="checkbox" name="inv_gz" %CHK_GZ%><span class="slider"></span></label></div>
+
+            <div class="section">OFFSETS</div>
+            <div class="row"><span>X</span><input type="number" name="off_gx" value="%OFF_GX%"></div>
+            <div class="row"><span>Y</span><input type="number" name="off_gy" value="%OFF_GY%"></div>
+            <div class="row"><span>Z</span><input type="number" name="off_gz" value="%OFF_GZ%"></div>
+
             <button type="submit" class="btn">APPLY CHANGES</button>
         </form>
     </div>
+    
     <div class="toggle" onclick="setS()">+</div>
+
+    <script>
+        const params = new URLSearchParams(location.search);
+        if (params.get('mock') === '1' || params.get('mock') === 'true') {
+            const s = document.createElement('script');
+            s.src = 'mock.js';
+            document.head.appendChild(s);
+        }
+    </script>
 
     <script type="module">
         import { init, updateUI } from './app.js';
         init();
         
-        // 自动识别环境：如果有 mockData 则使用假数据，否则 fetch 真实接口
         setInterval(async () => {
             if (window.mockData) {
                 updateUI(window.mockData());

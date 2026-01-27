@@ -20,7 +20,37 @@ body { margin: 0; overflow: hidden; background: var(--bg); font-family: "Inter",
 .section { font-size: 9px; color: var(--dim); margin: 25px 0 10px; letter-spacing: 2px; }
 .row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; font-size: 12px; }
 
-input, select { background: none; border: 1px solid var(--dim); color: var(--fg); padding: 5px; outline: none; font-family: inherit; font-size: 11px; }
+input, select {
+    background-color: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--dim);
+    color: var(--fg);
+    padding: 5px 6px;
+    outline: none;
+    font-family: inherit;
+    font-size: 11px;
+    letter-spacing: 1px;
+    transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+input:focus, select:focus { border-color: var(--fg); background-color: rgba(255, 255, 255, 0.04); }
+input:hover, select:hover { border-color: #4a4a4a; }
+
+select {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    padding-right: 26px;
+    background-image:
+        linear-gradient(45deg, transparent 50%, var(--fg) 50%),
+        linear-gradient(135deg, var(--fg) 50%, transparent 50%),
+        linear-gradient(to right, var(--dim), var(--dim));
+    background-position:
+        calc(100% - 14px) 50%,
+        calc(100% - 9px) 50%,
+        calc(100% - 24px) 50%;
+    background-size: 5px 5px, 5px 5px, 1px 14px;
+    background-repeat: no-repeat;
+}
+select option { background: var(--bg); color: var(--fg); }
 .btn { width: 100%; padding: 15px; background: var(--fg); color: var(--bg); border: none; font-weight: bold; cursor: pointer; margin-top: 20px; font-size: 11px; letter-spacing: 2px; }
 
 .toggle { position: fixed; bottom: 40px; right: 40px; width: 44px; height: 44px; border: 1px solid var(--dim); display: flex; align-items: center; justify-content: center; cursor: pointer; pointer-events: auto; transition: 0.2s; }
