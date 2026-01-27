@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>PHOENIX CORE | MONO</title>
+    <link rel="stylesheet" href="style.css">
+    <script type="importmap">{ "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js" } }</script>
+</head>
+<body>
+    <div id="ui">
+        <div class="header">PHOENIX CORE // SYSTEM LIVE</div>
+        <div class="data-row"><div class="label">PITCH</div><div id="vp" class="val">0.0</div><div class="track"><div id="cp" class="cursor"></div></div></div>
+        <div class="data-row"><div class="label">ROLL</div><div id="vr" class="val">0.0</div><div class="track"><div id="cr" class="cursor"></div></div></div>
+        <div class="data-row"><div class="label">YAW</div><div id="vy" class="val">0.0</div><div class="track"><div id="cy" class="cursor"></div></div></div>
+    </div>
+
+    <div class="panel collapsed" id="side">
+        <form action="/save" method="POST">
+            <div class="section">NETWORK</div>
+            <div class="row"><span>SSID</span><input type="text" name="ssid" value="%SSID%" style="width:120px"></div>
+            <div class="section">FILTERING</div>
+            <div class="row"><span>DLPF</span>
+                <select name="dlpf"><option value="0" %SEL_0%>OFF</option><option value="2" %SEL_2%>MID</option><option value="6" %SEL_6%>HIGH</option></select>
+            </div>
+            <div class="section">INVERSION</div>
+            <div class="row"><span>PITCH (X)</span><label class="switch"><input type="checkbox" name="inv_gx" %CHK_GX%><span class="slider"></span></label></div>
+            <div class="row"><span>ROLL (Y)</span><label class="switch"><input type="checkbox" name="inv_gy" %CHK_GY%><span class="slider"></span></label></div>
+            <div class="row"><span>YAW (Z)</span><label class="switch"><input type="checkbox" name="inv_gz" %CHK_GZ%><span class="slider"></span></label></div>
+            <button type="submit" class="btn">APPLY CHANGES</button>
+        </form>
+    </div>
+    <div class="toggle" onclick="setS()">+</div>
+
+    <script type="module">
+        import { init, updateUI } from './app.js';
+        init();
+        
+        // 自动识别环境：如果有 mockData 则使用假数据，否则 fetch 真实接口
+        setInterval(async () => {
+            if (window.mockData) {
+                updateUI(window.mockData());
+            } else {
+                try {
+                    const r = await fetch('/data');
+                    updateUI(await r.json());
+                } catch(e){}
+            }
+        }, 50);
+    </script>
+    </body>
+</html>

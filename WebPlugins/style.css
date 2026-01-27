@@ -1,0 +1,34 @@
+:root { --fg: #ffffff; --bg: #000000; --dim: #333333; }
+body { margin: 0; overflow: hidden; background: var(--bg); font-family: "Inter", "Helvetica", sans-serif; color: var(--fg); text-transform: uppercase; }
+
+/* HUD 仪表 */
+#ui { position: absolute; inset: 0; pointer-events: none; padding: 50px; z-index: 10; }
+.header { font-size: 12px; letter-spacing: 4px; margin-bottom: 40px; opacity: 0.5; }
+.data-row { margin-bottom: 30px; }
+.label { font-size: 10px; letter-spacing: 2px; margin-bottom: 5px; opacity: 0.4; }
+.val { font-size: 36px; font-weight: 200; font-family: 'Courier New', monospace; }
+.track { position: relative; height: 1px; background: var(--dim); margin-top: 10px; width: 200px; }
+.cursor { position: absolute; top: -5px; width: 2px; height: 11px; background: var(--fg); transform: translateX(-1px); transition: left 0.1s ease-out; }
+
+/* 配置面板 */
+.panel { 
+    position: fixed; right: 40px; top: 50%; transform: translateY(-50%); width: 280px;
+    background: var(--bg); padding: 40px; border: 1px solid var(--dim);
+    pointer-events: auto; transition: 0.3s;
+}
+.panel.collapsed { right: -400px; opacity: 0; }
+.section { font-size: 9px; color: var(--dim); margin: 25px 0 10px; letter-spacing: 2px; }
+.row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; font-size: 12px; }
+
+input, select { background: none; border: 1px solid var(--dim); color: var(--fg); padding: 5px; outline: none; font-family: inherit; font-size: 11px; }
+.btn { width: 100%; padding: 15px; background: var(--fg); color: var(--bg); border: none; font-weight: bold; cursor: pointer; margin-top: 20px; font-size: 11px; letter-spacing: 2px; }
+
+.toggle { position: fixed; bottom: 40px; right: 40px; width: 44px; height: 44px; border: 1px solid var(--dim); display: flex; align-items: center; justify-content: center; cursor: pointer; pointer-events: auto; transition: 0.2s; }
+.toggle:hover { border-color: var(--fg); }
+
+.switch { position: relative; width: 30px; height: 14px; }
+.switch input { opacity: 0; width: 0; height: 0; }
+.slider { position: absolute; cursor: pointer; inset: 0; border: 1px solid var(--dim); transition: .2s; }
+.slider:before { position: absolute; content: ""; height: 8px; width: 8px; left: 2px; bottom: 2px; background: var(--dim); transition: .2s; }
+input:checked + .slider { border-color: var(--fg); }
+input:checked + .slider:before { transform: translateX(16px); background: var(--fg); }
