@@ -1,0 +1,134 @@
+#ifndef WEBCONFIG_H
+#define WEBCONFIG_H
+
+#include <pgmspace.h>
+
+const char index_html[] PROGMEM = R"rawliteral(
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>Phoenix Core | Floating Interface</title>
+    
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+        }
+    }
+    </script>
+    <link rel="stylesheet" href="https://raw.githubusercontent.com/kailous/ESP8266-MPU6050-DSU/main/WebPlugins/phoenix_debug.css">
+</head>
+<body>
+
+    <div id="ui-layer">
+        <div class="hud-container">
+    
+    <div class="hud-header">
+        <div class="header-main">
+            <span class="glitch-text" data-text="凤凰核心">体感控制器</span>
+            <span class="version">v2.5.0-STABLE</span>
+        </div>
+        
+        <div class="telemetry-grid">
+            <div class="data-block">
+                <div class="label">俯仰</div>
+                <div class="value-wrapper">
+                    <span id="val-pitch" class="value">0.0</span><span class="unit">°</span>
+                </div>
+                <div class="scale" style="--cursor-color: var(--accent);">
+                    <div class="ticks"></div>
+                    <div id="cursor-pitch" class="cursor"></div>
+                </div>
+            </div>
+            <div class="data-block">
+                <div class="label">横滚</div>
+                <div class="value-wrapper">
+                    <span id="val-roll" class="value">0.0</span><span class="unit">°</span>
+                </div>
+                <div class="scale" style="--cursor-color: var(--primary);">
+                    <div class="ticks"></div>
+                    <div id="cursor-roll" class="cursor"></div>
+                </div>
+            </div>
+            <div class="data-block">
+                <div class="label">偏航</div>
+                <div class="value-wrapper">
+                    <span id="val-yaw" class="value">0.0</span><span class="unit">°</span>
+                </div>
+                <div class="scale" style="--cursor-color: var(--info);">
+                    <div class="ticks"></div>
+                    <div id="cursor-yaw" class="cursor"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="system-status">
+            <div id="sim-btn" class="status-btn">
+                <span class="status-dot"></span>
+                <span id="status-text">系统在线</span>
+            </div>
+            <div class="micro-charts">
+                <span>线性: 102.4</span>
+                <span>平方: 0.0032</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+        <div class="floating-panel" id="sidebar">
+            <div class="panel-title">
+                <span>配置终端</span>
+                <span style="cursor:pointer" onclick="toggleSidebar()">×</span>
+            </div>
+
+            <form action="/save" method="POST" style="display:contents">
+                <div class="section-header">📡 网络 / WiFi</div>
+                <div class="row"><span>SSID</span><input type="text" name="ssid" placeholder="保持默认"></div>
+                <div class="row"><span>密码</span><input type="password" name="pass" placeholder="******"></div>
+
+                <div class="section-header">📉 处理</div>
+                <div class="row">
+                    <span>降噪 (DLPF)</span>
+                    <select name="dlpf">
+                        <option value="0">关闭</option>
+                        <option value="3" selected>强</option>
+                        <option value="6">电影</option>
+                    </select>
+                </div>
+
+                <div class="section-header">🔄 轴向反转</div>
+                <div class="row"><span>俯仰反转</span><label class="switch"><input type="checkbox" name="inv_gx"><span class="slider"></span></label></div>
+                <div class="row"><span>偏航反转</span><label class="switch"><input type="checkbox" name="inv_gy"><span class="slider"></span></label></div>
+                <div class="row"><span>横滚反转</span><label class="switch"><input type="checkbox" name="inv_gz"><span class="slider"></span></label></div>
+
+                <div class="section-header">📏 偏移校准</div>
+                <div class="row"><span>X 偏移</span><input type="number" name="off_gx" value="0.00" step="0.01"></div>
+                <div class="row"><span>Z 偏移</span><input type="number" name="off_gy" value="0.00" step="0.01"></div>
+                <div class="row"><span>Y 偏移</span><input type="number" name="off_gz" value="0.00" step="0.01"></div>
+
+                <button type="submit" class="btn-prime">保存并重启</button>
+            </form>
+
+            <form action="/calibrate" method="POST" style="display:contents">
+                <button type="submit" class="btn-calib">重新校准传感器</button>
+            </form>
+        </div>
+
+        <div class="toggle-btn" onclick="toggleSidebar()">⚙️</div>
+    </div>
+
+    <script>
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('collapsed');
+        }
+    </script>
+
+    <script type="module" src="https://raw.githubusercontent.com/kailous/ESP8266-MPU6050-DSU/main/WebPlugins/phoenix_view.js"></script>
+</body>
+</html>
+
+)rawliteral";
+
+#endif

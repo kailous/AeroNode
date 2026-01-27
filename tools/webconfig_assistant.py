@@ -100,6 +100,52 @@ def _rewrite_asset_urls(html: str, html_path: Path, repo_root: Path, raw_base: s
     return pattern.sub(replace, html)
 
 
+def _inline_assets(html: str, html_path: Path, repo_root: Path) -> str:
+    def inline_css(match: re.Match[str]) -> str:
+        url = match.group("url")
+        if not _is_relative_url(url):
+            return match.group(0)
+        resolved = (html_path.parent / url).resolve()
+        try:
+            resolved.relative_to(repo_root.resolve())
+        except ValueError:
+            return match.group(0)
+        if not resolved.exists():
+            return match.group(0)
+        css = resolved.read_text(encoding="utf-8")
+        return f"<style>\n{css}\n</style>"
+
+    def inline_js(match: re.Match[str]) -> str:
+        url = match.group("url")
+        if not _is_relative_url(url):
+            return match.group(0)
+        resolved = (html_path.parent / url).resolve()
+        try:
+            resolved.relative_to(repo_root.resolve())
+        except ValueError:
+            return match.group(0)
+        if not resolved.exists():
+            return match.group(0)
+        js = resolved.read_text(encoding="utf-8")
+        return f"<script type=\"module\">\n{js}\n</script>"
+
+    # inline CSS links
+    html = re.sub(
+        r'<link[^>]*rel=["\']stylesheet["\'][^>]*href=["\'](?P<url>[^"\']+)["\'][^>]*>',
+        inline_css,
+        html,
+        flags=re.IGNORECASE,
+    )
+    # inline module scripts
+    html = re.sub(
+        r'<script[^>]*type=["\']module["\'][^>]*src=["\'](?P<url>[^"\']+)["\'][^>]*>\s*</script>',
+        inline_js,
+        html,
+        flags=re.IGNORECASE,
+    )
+    return html
+
+
 def _backup_file(path: Path, repo_root: Path) -> Optional[Path]:
     if not path.exists():
         return None
@@ -138,6 +184,7 @@ def main() -> int:
     raw_base = f"https://raw.githubusercontent.com/{owner}/{repo}/{branch}"
 
     html = html_path.read_text(encoding="utf-8")
+    html = _inline_assets(html, html_path, repo_root)
     html = _rewrite_asset_urls(html, html_path, repo_root, raw_base)
 
     backup = _backup_file(output_path, repo_root)

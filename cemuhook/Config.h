@@ -12,7 +12,7 @@
 #include "CRC32.h"
 
 // ================= 常量定义 =================
-const uint16_t udpPort = 26760; // ★★★ 补回了这一行！(DSU协议默认端口)
+const uint16_t udpPort = 26760; 
 
 // ================= 引脚定义 =================
 const int OLED_SDA = 4;  // D2
@@ -24,10 +24,8 @@ const uint32_t sampleInterval = 5000; // 5ms = 200Hz
 
 // ================= 数据结构 =================
 struct Config {
-  // WiFi 账号密码 (定长数组)
   char wifi_ssid[32];
   char wifi_pass[64];
-
   bool inv_gx, inv_gy, inv_gz;
   int16_t offset_gx, offset_gy, offset_gz;
   int8_t dlpf_mode; 
@@ -43,6 +41,7 @@ extern WiFiUDP udp;
 
 extern int16_t ax, ay, az, gx, gy, gz;
 extern float ax_f, ay_f, az_f, gx_f, gy_f, gz_f;
+extern float p, r, y; // ★ 新增：角度变量
 extern int16_t base_gx, base_gy, base_gz;
 
 extern IPAddress clientIP;

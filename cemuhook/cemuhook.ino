@@ -1,8 +1,8 @@
 #include "Config.h"
 #include "Hardware.h"
+#include "Display.h" 
 #include "Network.h"
 
-// ================= 变量定义 =================
 Config config;
 MPU6050 mpu(0x68);
 Adafruit_SSD1306 display(128, 64, &Wire, -1);
@@ -11,11 +11,10 @@ WiFiUDP udp;
 
 int16_t ax, ay, az, gx, gy, gz;
 float ax_f, ay_f, az_f, gx_f, gy_f, gz_f;
+float p = 0, r = 0, y = 0; 
 int16_t base_gx=0, base_gy=0, base_gz=0;
 
-// ★ 新增变量
 bool isAPMode = false; 
-
 IPAddress clientIP;
 uint16_t clientPort = 0;
 bool isConnected = false;
@@ -26,74 +25,64 @@ uint8_t macAddress[6];
 uint8_t udpDataOut[100];
 uint8_t udpIn[28];
 
-// ================= SETUP =================
 void setup() {
   Serial.begin(74880);
-  
   loadConfig();
-
-  // 1. 屏幕初始化 (D1/D2)
-  Wire.begin(OLED_SDA, OLED_SCL);
-  display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
-  display.setTextColor(SSD1306_WHITE);
-
-  // 2. ★★★ 调用智能配网逻辑 ★★★
-  setupWiFi(); 
   
-  // 此时已经连上 WiFi 或者开启 AP 了
-  // 获取一下 MAC (AP模式下也可以获取)
+  initDisplay(); 
+  setupWiFi();
   WiFi.macAddress(macAddress);
   udp.begin(udpPort);
-
-  // 3. Web Server
+  
   server.on("/", handleRoot);
   server.on("/data", handleLiveData);
   server.on("/save", handleSave);
   server.on("/calibrate", handleCalibrateWeb);
   server.begin();
-
-  // 4. MPU 初始化 (D5/D6)
+  
   initMPU();
-
-  // 5. 自动校准
   showStatus("Calibrating", "DO NOT MOVE!", true);
-  delay(1000);
   calibrateMPU();
-
-  // 6. 完成
   showStatus("READY!", "System Go", false);
-  delay(1000);
 }
 
-// ================= LOOP =================
 void loop() {
-  // ... Loop 内容和原来一模一样，保持不变 ...
   uint32_t now = micros();
-  server.handleClient(); 
+  server.handleClient();
+
   if (now - lastSampleTime > sampleInterval) {
+    float dt = (now - lastSampleTime) / 1000000.0f;
     lastSampleTime = now;
     packetCount++;
+
     mpu.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
-    // ... 计算逻辑 ... (请保持你之前的方案A/方案B代码)
-    // 这里为了节省篇幅省略了，请确保你保留了 Main.ino 中之前的核心映射代码
     
-    // ---------------------------------------------
-    // 这里是你之前确定的核心计算逻辑 (不要丢了!)
-    // ---------------------------------------------
-    float raw_gx = (float)(gx - base_gx - config.offset_gx) * 0.007633f; 
+    // 陀螺仪原始数据处理
+    float raw_gx = (float)(gx - base_gx - config.offset_gx) * 0.007633f;
     float raw_gy = (float)(gy - base_gy - config.offset_gy) * 0.007633f;
     float raw_gz = (float)(gz - base_gz - config.offset_gz) * 0.007633f;
+
+    // 应用反转配置
     if (config.inv_gx) raw_gx = -raw_gx;
     if (config.inv_gy) raw_gy = -raw_gy;
     if (config.inv_gz) raw_gz = -raw_gz;
 
-    // 方案 A (平放):
-    ax_f = ax * 0.000061f; ay_f = ay * 0.000061f; az_f = az * 0.000061f;
-    gx_f = raw_gx; gy_f = raw_gy; gz_f = raw_gz;
-    // ---------------------------------------------
+    ax_f = ax * 0.000061f;
+    ay_f = ay * 0.000061f; 
+    az_f = az * 0.000061f;
+    gx_f = raw_gx; 
+    gy_f = raw_gy; 
+    gz_f = raw_gz;
 
-    // UDP 发送 (仅在非 AP 模式且有客户端时发送)
-    // 或者即使在 AP 模式下，只要有 Client 发 handshake 也可以发
+    // 姿态解算
+    p = atan2(ay_f, az_f) * 57.2958f;
+    r = atan2(-ax_f, sqrt(ay_f * ay_f + az_f * az_f)) * 57.2958f;
+    y += gz_f * dt; // YAW 由 Z 轴积分得到
+    
+    // ★ 修正：将 YAW 限制在 -180 到 180 之间，解决跳变问题
+    if (y > 180.0f) y -= 360.0f;
+    if (y < -180.0f) y += 360.0f;
+
     if (clientPort != 0) {
        makeDataPacket();
        udp.beginPacket(clientIP, clientPort);
@@ -106,14 +95,12 @@ void loop() {
   }
 
   int packetSize = udp.parsePacket();
-  if (packetSize) {
-    if (packetSize >= 20) {
-       udp.read(udpIn, 28);
-       if (udpIn[16] == 0x02) { 
-         clientPort = udp.remotePort();
-         clientIP = udp.remoteIP();
-       }
-    } else { udp.flush(); }
+  if (packetSize >= 20) {
+     udp.read(udpIn, 28);
+     if (udpIn[16] == 0x02) { 
+       clientPort = udp.remotePort();
+       clientIP = udp.remoteIP();
+     }
   }
 
   if (isConnected != lastConnectionState) {
