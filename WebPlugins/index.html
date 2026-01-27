@@ -8,42 +8,43 @@
 </head>
 <body>
     <div id="ui">
-        <div class="header">PHOENIX CORE // SYSTEM LIVE</div>
-        <div class="data-row"><div class="label">PITCH</div><div id="vp" class="val">0.0</div><div class="track"><div id="cp" class="cursor"></div></div></div>
-        <div class="data-row"><div class="label">ROLL</div><div id="vr" class="val">0.0</div><div class="track"><div id="cr" class="cursor"></div></div></div>
-        <div class="data-row"><div class="label">YAW</div><div id="vy" class="val">0.0</div><div class="track"><div id="cy" class="cursor"></div></div></div>
+        <div class="header">PHOENIX CORE // SYSTEM LIVE // 系统在线</div>
+        <div class="data-row"><div class="label pitch">PITCH / 俯仰</div><div id="vp" class="val">0.0</div><div class="track"><div id="cp" class="cursor pitch"></div></div></div>
+        <div class="data-row"><div class="label roll">ROLL / 横滚</div><div id="vr" class="val">0.0</div><div class="track"><div id="cr" class="cursor roll"></div></div></div>
+        <div class="data-row"><div class="label yaw">YAW / 偏航</div><div id="vy" class="val">0.0</div><div class="track"><div id="cy" class="cursor yaw"></div></div></div>
     </div>
 
     <div class="panel collapsed" id="side">
         <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:20px; letter-spacing:2px;">
-            <span>CONFIG</span>
-            <span onclick="setS()" style="cursor:pointer; opacity:0.5">CLOSE</span>
+            <span>CONFIG / 配置</span>
+            <span onclick="setS()" style="cursor:pointer; opacity:0.5">CLOSE / 关闭</span>
         </div>
         
         <form action="/save" method="POST">
-            <div class="section">NETWORK</div>
-            <div class="row"><span>SSID</span><input type="text" name="ssid" value="%SSID%" style="width:120px"></div>
-            
-            <div class="section">FILTERING</div>
-            <div class="row"><span>DLPF</span>
+            <div class="section">NETWORK / 网络</div>
+            <div class="row"><span>SSID / 名称</span><input type="text" name="ssid" value="%SSID%" style="width:120px"></div>
+            <div class="row"><span>PASS / 密码</span><input id="wifi-pass" type="password" name="pass" placeholder="LEAVE BLANK TO KEEP" style="width:120px"></div>
+            <div class="row"><span>SHOW PASS / 明文</span><label class="switch"><input id="toggle-pass" type="checkbox"><span class="slider"></span></label></div>
+            <div class="section">FILTERING / 滤波</div>
+            <div class="row"><span>DLPF / 低通</span>
                 <select name="dlpf" style="width:132px">
-                    <option value="0" %SEL_0%>OFF</option>
-                    <option value="2" %SEL_2%>MID</option>
-                    <option value="6" %SEL_6%>HIGH</option>
+                    <option value="0" %SEL_0%>OFF / 关闭</option>
+                    <option value="2" %SEL_2%>MID / 中</option>
+                    <option value="6" %SEL_6%>HIGH / 高</option>
                 </select>
             </div>
 
-            <div class="section">INVERSION</div>
-            <div class="row"><span>PITCH (X)</span><label class="switch"><input type="checkbox" name="inv_gx" %CHK_GX%><span class="slider"></span></label></div>
-            <div class="row"><span>ROLL (Y)</span><label class="switch"><input type="checkbox" name="inv_gy" %CHK_GY%><span class="slider"></span></label></div>
-            <div class="row"><span>YAW (Z)</span><label class="switch"><input type="checkbox" name="inv_gz" %CHK_GZ%><span class="slider"></span></label></div>
+            <div class="section">INVERSION / 反向</div>
+            <div class="row"><span>PITCH (X) / 俯仰</span><label class="switch"><input type="checkbox" name="inv_gx" %CHK_GX%><span class="slider"></span></label></div>
+            <div class="row"><span>ROLL (Y) / 横滚</span><label class="switch"><input type="checkbox" name="inv_gy" %CHK_GY%><span class="slider"></span></label></div>
+            <div class="row"><span>YAW (Z) / 偏航</span><label class="switch"><input type="checkbox" name="inv_gz" %CHK_GZ%><span class="slider"></span></label></div>
 
-            <div class="section">OFFSETS</div>
-            <div class="row"><span>X</span><input type="number" name="off_gx" value="%OFF_GX%"></div>
-            <div class="row"><span>Y</span><input type="number" name="off_gy" value="%OFF_GY%"></div>
-            <div class="row"><span>Z</span><input type="number" name="off_gz" value="%OFF_GZ%"></div>
+            <div class="section">OFFSETS / 偏置</div>
+            <div class="row"><span>X / 俯仰</span><input type="number" name="off_gx" value="%OFF_GX%"></div>
+            <div class="row"><span>Y / 横滚</span><input type="number" name="off_gy" value="%OFF_GY%"></div>
+            <div class="row"><span>Z / 偏航</span><input type="number" name="off_gz" value="%OFF_GZ%"></div>
 
-            <button type="submit" class="btn">APPLY CHANGES</button>
+            <button type="submit" class="btn">APPLY / 应用</button>
         </form>
     </div>
     
@@ -55,6 +56,14 @@
             const s = document.createElement('script');
             s.src = 'mock.js';
             document.head.appendChild(s);
+        }
+
+        const passInput = document.getElementById('wifi-pass');
+        const passToggle = document.getElementById('toggle-pass');
+        if (passInput && passToggle) {
+            passToggle.addEventListener('change', () => {
+                passInput.type = passToggle.checked ? 'text' : 'password';
+            });
         }
     </script>
 

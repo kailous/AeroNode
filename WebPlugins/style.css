@@ -1,14 +1,22 @@
-:root { --fg: #ffffff; --bg: #000000; --dim: #333333; }
+:root { --fg: #ffffff; --bg: #000000; --dim: #333333; --min: #c5c5c5; --pitch: #FF7274; --roll: #80ed99; --yaw: #ffd60a; }
 body { margin: 0; overflow: hidden; background: var(--bg); font-family: "Inter", "Helvetica", sans-serif; color: var(--fg); text-transform: uppercase; }
 
 /* HUD 仪表 */
 #ui { position: absolute; inset: 0; pointer-events: none; padding: 50px; z-index: 10; }
 .header { font-size: 12px; letter-spacing: 4px; margin-bottom: 40px; opacity: 0.5; }
 .data-row { margin-bottom: 30px; }
-.label { font-size: 10px; letter-spacing: 2px; margin-bottom: 5px; opacity: 0.4; }
+.label { font-size: 10px; letter-spacing: 2px; margin-bottom: 5px; opacity: 1; }
 .val { font-size: 36px; font-weight: 200; font-family: 'Courier New', monospace; }
 .track { position: relative; height: 1px; background: var(--dim); margin-top: 10px; width: 200px; }
-.cursor { position: absolute; top: -5px; width: 2px; height: 11px; background: var(--fg); transform: translateX(-1px); transition: left 0.1s ease-out; }
+.cursor { position: absolute; top: -4px; width: 1.5px; height: 9px; background: var(--fg); transform: translateX(-1px); transition: left 0.1s ease-out; }
+.label.pitch { color: var(--pitch); }
+.label.roll { color: var(--roll); }
+.label.yaw { color: var(--yaw); }
+.cursor.pitch { background: var(--pitch); box-shadow: 0 0 8px var(--pitch), 0 0 18px var(--pitch), 0 0 32px var(--pitch), 0 0 48px rgba(255, 114, 116, 0.8); border-radius: 6px; }
+.cursor.roll { background: var(--roll); box-shadow: 0 0 8px var(--roll), 0 0 18px var(--roll), 0 0 32px var(--roll), 0 0 48px rgba(128, 237, 153, 0.8); border-radius: 6px; }
+.cursor.yaw { background: var(--yaw); box-shadow: 0 0 8px var(--yaw), 0 0 18px var(--yaw), 0 0 32px var(--yaw), 0 0 48px rgba(255, 214, 10, 0.8); border-radius: 6px; }
+
+
 
 /* 配置面板 */
 .panel { 
@@ -17,7 +25,7 @@ body { margin: 0; overflow: hidden; background: var(--bg); font-family: "Inter",
     pointer-events: auto; transition: 0.3s;
 }
 .panel.collapsed { right: -400px; opacity: 0; }
-.section { font-size: 9px; color: var(--dim); margin: 25px 0 10px; letter-spacing: 2px; }
+.section { font-size: 9px; color: var(--min); margin: 25px 0 10px; letter-spacing: 2px; }
 .row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; font-size: 12px; }
 
 input, select {
