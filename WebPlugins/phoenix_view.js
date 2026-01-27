@@ -3,7 +3,7 @@
         import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
         let scene, camera, renderer, coreGroup, headModel, dynamicPointer;
-        let isSimulation = true;
+        window.isSimulation = true;
 
         async function init() {
             scene = new THREE.Scene();
@@ -168,11 +168,25 @@
             return axesGroup;
         }
 
+        // ★ 新增：暴露给外部调用的接口
+        window.setPhoenixRotation = function(p, y, r) {
+            if (window.isSimulation) return; // 如果开启了模拟，则不接受外部数据
+
+            // 将角度转换为弧度并应用到核心组
+            const rad = Math.PI / 180;
+            coreGroup.rotation.x = p * rad;
+            coreGroup.rotation.y = y * rad;
+            coreGroup.rotation.z = r * rad;
+
+            // 同步更新红色指针位置
+            if (dynamicPointer) dynamicPointer.rotation.y = -coreGroup.rotation.y;
+        };
+
         function animate() {
             requestAnimationFrame(animate);
             const t = Date.now() * 0.001;
 
-            if (isSimulation) {
+            if (window.isSimulation) {
                 const rot = { x: Math.sin(t*0.4)*12, y: (t*15)%360, z: Math.cos(t*0.3)*5 };
                 coreGroup.rotation.x = rot.x * (Math.PI/180);
                 coreGroup.rotation.y = rot.y * (Math.PI/180);
@@ -208,8 +222,9 @@
         });
 
         document.getElementById('sim-btn').onclick = () => {
-            isSimulation = !isSimulation;
-            document.getElementById('sim-btn').innerText = isSimulation ? "系统模拟：开启" : "系统模拟：关闭";
+            window.isSimulation = !window.isSimulation;
+            const statusText = document.getElementById('status-text');
+            if (statusText) statusText.innerText = window.isSimulation ? "模拟模式" : "实时数据";
         };
 
         init();

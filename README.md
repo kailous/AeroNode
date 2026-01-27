@@ -40,6 +40,7 @@
 │  ├─ Hardware.h
 │  ├─ Network.h
 │  └─ WebConfig.h
+├─ backup/                    # WebConfig.h 自动备份目录
 ├─ I2C_Scanner_Start/         # I2C 线序检测工具
 │  └─ I2C_Scanner_Start.ino
 └─ README.md
