@@ -4,9 +4,12 @@ import shutil
 from datetime import datetime
 
 def pack_web_config():
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    repo_dir = os.path.abspath(os.path.join(base_dir, '..'))
+    web_dir = os.path.join(repo_dir, 'WebPlugins')
     # --- 1. 备份逻辑 ---
-    target_file = 'WebConfig.h'
-    backup_dir = 'backup'
+    target_file = os.path.join(repo_dir, 'cemuhook', 'WebConfig.h')
+    backup_dir = os.path.join(repo_dir, 'backup')
     
     if os.path.exists(target_file):
         # 如果不存在 backup 目录则创建
@@ -25,11 +28,11 @@ def pack_web_config():
 
     # --- 2. 读取资源文件 ---
     try:
-        with open('index.html', 'r', encoding='utf-8') as f:
+        with open(os.path.join(web_dir, 'index.html'), 'r', encoding='utf-8') as f:
             html = f.read()
-        with open('style.css', 'r', encoding='utf-8') as f:
+        with open(os.path.join(web_dir, 'style.css'), 'r', encoding='utf-8') as f:
             css = f.read()
-        with open('app.js', 'r', encoding='utf-8') as f:
+        with open(os.path.join(web_dir, 'app.js'), 'r', encoding='utf-8') as f:
             js = f.read()
     except FileNotFoundError as e:
         print(f"Error: 找不到资源文件 - {e.filename}")
