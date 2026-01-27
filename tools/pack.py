@@ -70,7 +70,9 @@ def pack_web_config():
     html = re.sub(r'', '', html, flags=re.DOTALL)
     
     # --- 4. 写入新的 WebConfig.h ---
-    header_content = f"""#ifndef WEBCONFIG_H
+    version_tag = datetime.now().strftime("%Y%m%d_%H%M%S")
+    header_content = f"""// PACKED_VERSION: {version_tag}
+#ifndef WEBCONFIG_H
 #define WEBCONFIG_H
 
 #include <pgmspace.h>

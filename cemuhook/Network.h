@@ -74,7 +74,7 @@ void handleSave() {
   }
 }
 
-void handleCalibrateWeb() { calibrateMPU(); server.sendHeader("Location", "/"); server.send(303); }
+void handleCalibrateWeb() { calibrateMPU(); server.sendHeader("Location", "/"); server.send(303); y = 0; }
 
 void makeDataPacket() {
     memset(udpDataOut, 0, 100);

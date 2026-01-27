@@ -1,4 +1,4 @@
-// PACKED_VERSION: 20260127_193507
+// PACKED_VERSION: 20260127_192913
 #ifndef WEBCONFIG_H
 #define WEBCONFIG_H
 
@@ -127,7 +127,7 @@ input:checked + .slider:before { transform: translateX(16px); background: var(--
         </form>
 
         <div class="section">CALIBRATION / 校准</div>
-        <button type="button" class="btn" onclick="fetch('/calibrate')">RESET GYRO / 陀螺仪重置</button>
+        <button type="button" class="btn" onclick="location.href='/calibrate'">RESET GYRO / 陀螺仪重置</button>
     </div>
     
     <div class="toggle" onclick="setS()">+</div>
