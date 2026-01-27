@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phoenix Core | Holo-Chip Edition</title>
+    <style>
+        body { margin: 0; overflow: hidden; background-color: #000; font-family: "Microsoft YaHei", monospace; user-select: none; }
+        #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; display: flex; flex-direction: column; justify-content: space-between; }
+        .hud-top {
+            padding: 20px; background: linear-gradient(to bottom, rgba(0,20,40,0.9), transparent);
+            color: #00e676; text-shadow: 0 0 15px #00e676, 0 0 30px #00ffff;
+            border-bottom: 1px solid rgba(0, 255, 255, 0.2);
+        }
+        .data-grid { display: flex; gap: 20px; font-size: 18px; margin-top: 10px;}
+        .data-item span { font-weight: bold; color: #fff; font-family: Consolas, monospace; }
+        .txt-red { color: #ff2d55 !important; text-shadow: 0 0 15px #ff2d55;}
+        .txt-green { color: #00e676 !important; text-shadow: 0 0 15px #00e676;}
+        .txt-blue { color: #007aff !important; text-shadow: 0 0 15px #007aff;}
+        .hud-bottom { padding: 20px; background: linear-gradient(to top, rgba(0,10,20,0.9), transparent); pointer-events: auto; display: flex; gap: 10px; align-items: center; }
+        input { background: rgba(0, 20, 40, 0.6); border: 1px solid rgba(0, 255, 255, 0.3); color: #00ffff; padding: 8px; border-radius: 2px; width: 120px; text-align: center; outline: none; transition: 0.3s; }
+        input:focus { border-color: #00ffff; box-shadow: 0 0 20px rgba(0, 255, 255, 0.5) inset; }
+        button { background: rgba(0, 230, 118, 0.2); color: #00e676; border: 1px solid #00e676; padding: 8px 16px; border-radius: 2px; font-weight: bold; cursor: pointer; transition: 0.2s; text-transform: uppercase; box-shadow: 0 0 15px rgba(0, 230, 118, 0.2); }
+        button:hover { background: rgba(0, 230, 118, 0.8); color: #000; box-shadow: 0 0 30px rgba(0, 230, 118, 0.6); }
+        button:active { transform: scale(0.95); }
+        button.warning { background: rgba(255, 152, 0, 0.2); color: #ff9800; border-color: #ff9800; box-shadow: 0 0 15px rgba(255, 152, 0, 0.2);}
+        button.warning:hover { background: #ff9800; color:#000; box-shadow: 0 0 30px #ff9800;}
+        .toggle-sim { position: absolute; top: 20px; right: 20px; pointer-events: auto; background: rgba(0,0,0,0.5); padding: 5px 10px; border-radius: 20px; font-size: 12px; color: #888; cursor: pointer; border: 1px solid #444; }
+        .toggle-sim.active { color: #00e676; border-color: #00e676; box-shadow: 0 0 10px #00e676 inset;}
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+    <div id="ui-layer">
+        <div class="hud-top">
+            <h2 style="margin:0 0 5px 0; font-size:28px; letter-spacing:3px;">PHOENIX CORE</h2>
+            <div style="font-size:12px; color:#00ffff; opacity:0.8; letter-spacing: 1px;">>>> HOLOGRAPHIC SYSTEM ONLINE <<<</div>
+            <div class="data-grid">
+                <div class="data-item txt-red">[X] PITCH: <span id="val-pitch">0.0</span></div>
+                <div class="data-item txt-green">[Y] YAW: <span id="val-yaw">0.0</span></div>
+                <div class="data-item txt-blue">[Z] ROLL: <span id="val-roll">0.0</span></div>
+            </div>
+        </div>
+        <div class="toggle-sim active" id="sim-btn" onclick="toggleSim()">🟢 SIMULATION DATA STREAM</div>
+        <div class="hud-bottom">
+            <input type="text" placeholder="NET_SSID">
+            <input type="password" placeholder="NET_PASS">
+            <button onclick="alert('UPLOAD CONFIG')">UPLOAD</button>
+            <div style="flex-grow:1"></div>
+            <button class="warning" onclick="alert('CALIBRATING GYRO...')">RE-CALIBRATE</button>
+        </div>
+    </div>
+        <script src="phoenix_view.js"></script>
+</body>
+</html>
