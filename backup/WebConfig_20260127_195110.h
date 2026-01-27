@@ -1,4 +1,4 @@
-// PACKED_VERSION: 20260127_195110
+// PACKED_VERSION: 20260127_193507
 #ifndef WEBCONFIG_H
 #define WEBCONFIG_H
 
@@ -96,6 +96,7 @@ input:checked + .slider:before { transform: translateX(16px); background: var(--
     <div class="panel" id="side">
         <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:20px; letter-spacing:2px;">
             <span>CONFIG / 配置</span>
+            <span onclick="setS()" style="cursor:pointer; opacity:0.5">CLOSE / 关闭</span>
         </div>
         
         <form action="/save" method="POST">
@@ -129,6 +130,7 @@ input:checked + .slider:before { transform: translateX(16px); background: var(--
         <button type="button" class="btn" onclick="fetch('/calibrate')">RESET GYRO / 陀螺仪重置</button>
     </div>
     
+    <div class="toggle" onclick="setS()">+</div>
 
     
 
