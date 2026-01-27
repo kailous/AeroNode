@@ -36,6 +36,10 @@ def pack_web_config():
         return
 
     # --- 3. 注入与封装逻辑 ---
+    # 打包时移除 mock 相关逻辑（URL 参数加载 mock.js）
+    mock_script_pattern = r'<script>\s*const params = new URLSearchParams\(location\.search\);.*?</script>'
+    html = re.sub(mock_script_pattern, '', html, flags=re.DOTALL)
+
     # 替换 CSS
     html = html.replace('<link rel="stylesheet" href="style.css">', f'<style>{css}</style>')
     
