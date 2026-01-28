@@ -1,73 +1,45 @@
 # ESP8266-MPU6050-DSU
 
-一个基于 **ESP8266 + MPU6050 + OLED** 的 DSU 体感开发项目，提供 200Hz 姿态数据采样，通过 UDP 向支持 Cemuhook/DSU 协议的客户端输出。
+本仓库基于一个开源库进行改造，作为 **ESP8266 + MPU6050** 的 DSU 项目脚手架。
+当前处于重构阶段：保留可用说明，逐步替换旧实现。
 
-## 功能特性
-- MPU6050 姿态数据采集（加速度 + 陀螺仪）
-- 200Hz UDP 输出，兼容 Cemuhook/DSU 客户端
-- OLED 状态显示（连接/校准/运行）
-- Web 配置面板（WiFi、方向反转、偏移、DLPF 降噪、校准）
-- 失败自动切 AP 模式，方便首配
+> 说明：原始完整代码已移入本地 `backup/`，该目录在 `.gitignore` 中被忽略，不会上传。
 
-## 硬件与接线
-**硬件**
-- ESP8266 开发板（如 NodeMCU/WeMos D1 mini）
-- MPU6050
-- 0.96" I2C OLED (SSD1306)
-
-**默认接线（见 `cemuhook/Config.h`）**
-- OLED: `SDA=D2(GPIO4)` / `SCL=D1(GPIO5)`
-- MPU: `SDA=D5(GPIO14)` / `SCL=D6(GPIO12)`
-
-> 如 MPU6050 无法识别，可使用 `I2C_Scanner_Start/I2C_Scanner_Start.ino` 自动检测线序，必要时把 MPU 的 SDA/SCL 对调并修改 `Config.h`。
-
-## 依赖库
-请在 Arduino IDE 或 PlatformIO 中安装：
-- **ESP8266 core**
-- **MPU6050**（I2Cdevlib 版本）
-- **Adafruit GFX**
-- **Adafruit SSD1306**
-- **CRC32**
-
-> 这些库默认放在本地 `libraries/`，该目录已加入 `.gitignore`，不会被提交。
+## 重构说明
+- 这是“在原库基础上重构”的工程，不是完全重写。
+- **硬件接线保持不变**（下方接线说明仍然有效）。
+- 旧说明中可复用的内容会保留，但部分细节可能会随着重构调整。
 
 ## 目录结构
 ```
 .
-├─ cemuhook/                 # 主固件 (DSU 输出 + Web 配置)
-│  ├─ cemuhook.ino
-│  ├─ Config.h
-│  ├─ Hardware.h
-│  ├─ Network.h
-│  └─ WebConfig.h
-├─ backup/                    # WebConfig.h 自动备份目录
-├─ I2C_Scanner_Start/         # I2C 线序检测工具
-│  └─ I2C_Scanner_Start.ino
+├─ calibrate/            # 校准工具（串口交互）
+├─ gyro/                 # 采样 + UDP 发送示例
+├─ WebPlugins/           # Web 相关插件/资源
+├─ tools/                # 辅助工具与脚本
+├─ assistant-notes.md    # AI 协作笔记
 └─ README.md
 ```
 
-## 烧录与使用
-1. 打开 `cemuhook/cemuhook.ino`，选择正确的 ESP8266 开发板和端口。
-2. 编译并烧录。
-3. 设备启动后：
-   - **已保存 WiFi**：自动连接并显示 IP。
-   - **未保存/连接失败**：自动开启 AP。
-     - SSID: `Phoenix_AP`
-     - 密码: `12345678`
-     - Web 配置地址: `http://192.168.4.1`
-4. Web 页面可配置方向反转、偏移、DLPF、校准等。
-5. 在支持 DSU 的客户端中填写设备 IP，端口为 **26760**。
+## 硬件与接线（仍有效）
+**硬件**
+- ESP8266 开发板（如 NodeMCU/WeMos D1 mini）
+- MPU6050
+- 0.96" I2C OLED（SSD1306，可选）
 
-## Web 配置说明
-- **WiFi**：SSID/Pass 留空则不修改；保存后自动重启。
-- **降噪(DLPF)**：不同等级对应不同滤波强度。
-- **反转/偏移**：用于修正轴向与零漂。
-- **重新校准**：固定设备后点击可重新校准陀螺仪。
+**默认接线**
+- OLED: `SDA=D2(GPIO4)` / `SCL=D1(GPIO5)`
+- MPU: `SDA=D5(GPIO14)` / `SCL=D6(GPIO12)`
 
-## 常见问题
-- **MPU6050 无数据**：先用 `I2C_Scanner_Start` 检查是否接反 SDA/SCL。
-- **Web 进不去**：确认是否在同一 WiFi/热点内，AP 模式用 `192.168.4.1`。
-- **DSU 无数据**：确认客户端设置了正确 IP 和端口 `26760`，并有握手请求。
+> 如 MPU6050 无法识别，可用 `tools` 或 `backup` 中的 I2C 扫描示例检查线序，必要时对调 SDA/SCL。
 
-## 免责声明
-本项目用于学习与开发用途，请勿用于需要严格安全/精度保障的场景。
+## 使用说明（简要）
+- **校准**：打开 `calibrate/calibrate.ino`，按串口提示完成校准。
+- **发送数据**：打开 `gyro/gyro.ino`，配置 WiFi/端口并烧录。
+
+## 本地备份策略
+- `backup/`：历史代码与草稿，仅本地保存，不参与提交。
+- `libraries/`：Arduino 本地库目录，同样已忽略。
+
+## AI 协作笔记
+- 建议在 `assistant-notes.md` 里记录接线、校准结果、改动历史等关键上下文，方便 AI 助手快速接手。
