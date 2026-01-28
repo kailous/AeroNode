@@ -2,5 +2,7 @@
 libraries/
 libraries
 
+backup/
+
 # macOS
 .DS_Store
