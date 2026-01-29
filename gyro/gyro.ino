@@ -7,26 +7,10 @@
 #include "OledDisplay.h" // OLED 显示模块
 #include "SerialPlotter.h" // 串口示波器模块
 #include "Calibration.h" // 校准参数
+#include "UserConfig.h" // 用户自定义数据
 
 int16_t  accXI, accYI, accZI, gyrPI, gyrYI, gyrRI; // 原始整型姿态数据
 float    accXF, accYF, accZF, gyrPF, gyrYF, gyrRF; // 浮点姿态数据
-
-/***************************************************************************************
- * 用户自定义数据
-****************************************************************************************/
-
-char wifiSSID[] = "Kailous_2.4G";
-char wifiPass[] = "Kailous309999811";
-uint16_t udpPort = 26760;
-
-const uint8_t mpuSda = 14, mpuScl = 12; // MPU6050 I2C GPIO 引脚连接
-const uint8_t mpuAddr = 0x68; // MPU6050 的 I2C 地址
-
-// OLED 显示设置: SDA=D2(GPIO4), SCL=D1(GPIO5)
-OledDisplay display(4, 5);
-
-// 串口示波器设置 (默认关闭，调试时可改为 true)
-SerialPlotter plotter(false);
 
 /***************************************************************************************
  *
