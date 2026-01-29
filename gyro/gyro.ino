@@ -4,6 +4,9 @@
 #include "MPU6050.h" // 作者：jrowberg
 #include "I2Cdev.h"  // 库地址：https://github.com/jrowberg/i2cdevlib
 #include "CRC32.h"   // 作者：bakercp，https://github.com/bakercp/CRC32
+#include "OledDisplay.h" // OLED 显示模块
+#include "SerialPlotter.h" // 串口示波器模块
+#include "Calibration.h" // 校准参数
 
 int16_t  accXI, accYI, accZI, gyrPI, gyrYI, gyrRI; // 原始整型姿态数据
 float    accXF, accYF, accZF, gyrPF, gyrYF, gyrRF; // 浮点姿态数据
@@ -12,44 +15,18 @@ float    accXF, accYF, accZF, gyrPF, gyrYF, gyrRF; // 浮点姿态数据
  * 用户自定义数据
 ****************************************************************************************/
 
-char wifiSSID[] = "RAD";
-char wifiPass[] = "rad666888";
+char wifiSSID[] = "Kailous_2.4G";
+char wifiPass[] = "Kailous309999811";
 uint16_t udpPort = 26760;
 
 const uint8_t mpuSda = 14, mpuScl = 12; // MPU6050 I2C GPIO 引脚连接
 const uint8_t mpuAddr = 0x68; // MPU6050 的 I2C 地址
 
+// OLED 显示设置: SDA=D2(GPIO4), SCL=D1(GPIO5)
+OledDisplay display(4, 5);
 
-int16_t* swapTable[] =
-{
-  &accXI,
-  &accZI,
-  &accYI,
-  &gyrPI,
-  &gyrRI,
-  &gyrYI,
-};
-bool signTable[] = // 为 true 时取反
-{
-  false, // accXI
-  false, // accYI
-  true,  // accZI
-  true,  // gyrPI
-  false, // gyrYI
-  true,  // gyrRI
-};
-int16_t offsetTable[] =
-{
-  -3264, // accXI
-  -11, // accYI
-  1602, // accZI
-  38, // gyrPI
-  -3, // gyrYI
-  47, // gyrRI
-};
-
-
-float gyrOffYF = 0; // 可选：手柄静止时填入 PadTest 的 Gyro Y 来消除漂移
+// 串口示波器设置 (默认关闭，调试时可改为 true)
+SerialPlotter plotter(false);
 
 /***************************************************************************************
  *
@@ -63,8 +40,8 @@ uint8_t udpDataOut[100];
 // 要上报的 MAC 地址，若设为 0 则使用 ESP8266 的 MAC
 uint8_t macAddress[] = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
 
-bool serialPlotting = false; // 调试串口示波器时改为 true
 bool debugLog = false; // 启用调试日志
+bool clientConnected = false; // 标记客户端是否已连接，用于控制 OLED 刷新
 
 uint32_t dataPacketNumber = 0; // 当前数据包计数
 
@@ -76,7 +53,7 @@ uint32_t dataRequestTime; // 上一次收到数据请求的时间
 const uint32_t receiveDelay       = 30e3; // 接收数据包的最小时间间隔
 const uint32_t sampleDelay        = 10e3; // MPU6050 采样间隔
 const uint32_t fifoSendDelay      = 1e3;  // UDP 发送间隔
-const uint32_t dataRequestTimeout = 30e6; // 数据请求超时时间，设为 0 表示禁用
+const uint32_t dataRequestTimeout = 0;    // 数据请求超时时间，设为 0 表示禁用 (防止 USB 供电时意外休眠)
 
 // 网络数据包大小
 const uint32_t infoResponseSize = 32;
@@ -322,33 +299,52 @@ Fifo<fifoMaxSize, dataResponseSize> fifo;
 
 void setup()
 {
-  Serial.begin(74880);
+  plotter.begin(74880);
 
-  Serial.print("\n正在连接");
+  // 初始化 OLED
+  display.begin();
+  display.showBooting();
+  delay(500); // 稍微停留一下，让用户看到启动画面
+  display.showConnecting();
+
+  plotter.logWifiConnecting();
   WiFi.begin(wifiSSID, wifiPass);
+  int wifiRetry = 0;
   while (WiFi.status() != WL_CONNECTED)
   {
+    if (wifiRetry++ > 40) { // 20秒超时 (40 * 500ms)
+      display.showWifiTimeoutError();
+      while (true) delay(100); // 停机
+    }
     delay(500);
-    Serial.print(".");
+    plotter.printDot();
   }
-  Serial.print("\n已连接，IP 地址：");
-  Serial.println(WiFi.localIP());
+  plotter.logWifiConnected(WiFi.localIP());
+
+  // WiFi 连接成功，显示网络信息
+  display.showServerReady(WiFi.SSID(), WiFi.localIP(), udpPort, WiFi.macAddress());
 
   // 如果 macAddress 为 0，则读取 ESP8266 的 MAC
   if (!(macAddress[0] | macAddress[1] | macAddress[2] | macAddress[3] | macAddress[4] | macAddress[5]))
     WiFi.macAddress(macAddress);
 
-  Serial.print("MAC 地址：");
-  Serial.println(WiFi.macAddress());
+  plotter.logMacAddress(WiFi.macAddress());
 
   udp.begin(udpPort);
-  Serial.print("UDP 服务器已启动，端口：");
-  Serial.println(udpPort);
+  plotter.logUdpServerStarted(udpPort);
 
-  Serial.println("正在初始化 MPU6050");
+  plotter.logMpuInitializing();
   Wire.begin(mpuSda, mpuScl); // 将 MPU6050 连接到 mpuSda 和 mpuScl 定义的 GPIO 引脚
   mpu.initialize();
-  Serial.println(mpu.testConnection() ? "MPU6050 连接成功" : "MPU6050 连接失败");
+  
+  bool mpuConnection = mpu.testConnection();
+  plotter.logMpuConnection(mpuConnection);
+  if (!mpuConnection) {
+    display.showMpuConnectionError();
+    // 如果硬件连接失败，停在这里，不再继续执行
+    while (true) { delay(100); }
+  }
+
   mpu.setFullScaleGyroRange(gyroSens); // 设置陀螺仪灵敏度
   mpu.setXAccelOffset(offsetTable[0]);
   mpu.setYAccelOffset(offsetTable[1]);
@@ -359,7 +355,7 @@ void setup()
 
   dataRequestTime = micros(); // 设置 dataRequestTime，若超时未收到数据请求将关机
 
-  Serial.println("初始化完成！");
+  plotter.logInitComplete();
 }
 
 void loop()
@@ -399,15 +395,7 @@ void loop()
     makeDataPacket(udpDataOut, dataPacketNumber, sampleTime, accXF, accYF, accZF, gyrPF, gyrYF, gyrRF);
     fifo.pushPacket(dataReplyPort, dataReplyIp, dataResponseSize, udpDataOut);
 
-    if (serialPlotting)
-    {
-        Serial.print(" 加速度X: "); Serial.print(accXF);
-        Serial.print(" 加速度Y: "); Serial.print(accYF);
-        Serial.print(" 加速度Z: "); Serial.print(accZF);
-        Serial.print(" 角速度P: "); Serial.print(gyrPF);
-        Serial.print(" 角速度Y: "); Serial.print(gyrYF);
-        Serial.print(" 角速度R: "); Serial.println(gyrRF);
-    }
+    plotter.plot(accXF, accYF, accZF, gyrPF, gyrYF, gyrRF, dataPacketNumber);
   }
 
   // 2. 检查请求
@@ -423,7 +411,7 @@ void loop()
       {
         case 0x01: // 控制器信息
           if (debugLog)
-            Serial.println("收到信息请求！");
+            plotter.logInfoRequest();
 
           for (uint8_t i = 0; i < udpIn[20]; i++) // udpIn[20] - 需要上报的端口数量
           {
@@ -434,7 +422,14 @@ void loop()
 
         case 0x02: // 控制器输入数据
           if (debugLog)
-            Serial.println("收到数据请求！");
+            plotter.logDataRequest();
+
+          // 状态切换：仅在首次收到数据请求时更新 OLED
+          if (!clientConnected)
+          {
+            clientConnected = true;
+            display.showClientConnected(udp.remoteIP());
+          }
 
           dataReplyPort = udp.remotePort(); dataReplyIp = udp.remoteIP();
 
@@ -455,7 +450,8 @@ void loop()
   if (dataRequestTimeout && (micros() - dataRequestTime > dataRequestTimeout)) // 检查是否因缺少控制器请求而超时
   {
     // 若长时间未收到数据包，则不再需要姿态信息，为节能关闭
-    Serial.println("正在关机..."); Serial.flush();
+    plotter.logShuttingDown();
+    display.showDeepSleep();
     ESP.deepSleep(0);
   }
 }

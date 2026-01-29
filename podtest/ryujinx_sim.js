@@ -1,31 +1,79 @@
 const dgram = require('dgram');
 const WebSocket = require('ws');
+const http = require('http');
+const fs = require('fs');
+const path = require('path');
 const { crc32 } = require('crc'); // 需要安装 crc 库: npm install crc
 
 // =================== 配置区域 ===================
-const ESP_IP = '192.168.11.108'; // 【请修改】你的 ESP8266 IP 地址
-const ESP_PORT = 26760;          // ESP8266 监听端口
+let ESP_IP = '';                 // 默认 ESP8266 IP 地址
+let ESP_PORT = 26760;            // 默认 ESP8266 监听端口
 const LOCAL_PORT = 26760;        // 本机监听端口 (模拟器默认端口)
-const WS_PORT = 8080;            // 前端网页端口
+const WEB_PORT = 8080;           // Web 服务端口
 // ===============================================
 
-// 1. 启动 WebSocket 服务 (给网页用)
-const wss = new WebSocket.Server({ port: WS_PORT });
-console.log(`[WS] WebSocket server running on port ${WS_PORT}`);
+// 全局状态
+let client = null; // UDP Socket
+let handshakeInterval = null;
+let isRunning = false;
 
-// 2. 启动 UDP Socket (模拟 Ryujinx)
-const client = dgram.createSocket('udp4');
+// ================= Web 服务器 (UI + WebSocket) =================
+
+// 1. 启动 HTTP 服务 (读取 index.html)
+const server = http.createServer((req, res) => {
+    if (req.method === 'GET' && (req.url === '/' || req.url === '/index.html')) {
+        fs.readFile(path.join(__dirname, 'index.html'), 'utf8', (err, data) => {
+            if (err) {
+                res.writeHead(500);
+                res.end('Error loading index.html');
+                return;
+            }
+            // 简单的模板替换，将 JS 中的配置注入到 HTML
+            const html = data.replace('${ESP_IP}', ESP_IP).replace('${ESP_PORT}', ESP_PORT);
+            res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+            res.end(html);
+        });
+    } else {
+        res.writeHead(404);
+        res.end('Not Found');
+    }
+});
+
+// 3. 启动 WebSocket 服务 (挂载在 HTTP Server 上)
+const wss = new WebSocket.Server({ server });
+
+wss.on('connection', (ws) => {
+    // 连接时发送当前状态
+    ws.send(JSON.stringify({ type: 'status', running: isRunning, ip: ESP_IP, port: ESP_PORT }));
+
+    ws.on('message', (message) => {
+        try {
+            const data = JSON.parse(message);
+            if (data.cmd === 'start') {
+                startUdpService(data.ip, data.port);
+            } else if (data.cmd === 'stop') {
+                stopUdpService();
+            }
+        } catch (e) {
+            console.error('WS Error:', e);
+        }
+    });
+});
+
+server.listen(WEB_PORT, () => {
+    console.log(`[Web] 管理页面已启动: http://localhost:${WEB_PORT}`);
+});
 
 // --- 核心逻辑：CRC32 算法 (DSU 协议专用) ---
 // 如果不想安装 'crc' 库，可以用这个简易函数代替，但建议用库更稳
 function calculateCRC(buffer) {
-    // 简单的 CRC32 实现，或者直接用 npm install crc 后的 crc32(buffer)
-    // 这里为了方便，假设你安装了 crc 库。如果没有，请运行 npm install crc
-    return require('crc').crc32(buffer); 
+    return crc32(buffer); 
 }
 
 // --- 核心逻辑：构造“请求数据”包 ---
 function sendDataRequest() {
+    if (!client) return;
+
     // DSU 协议头: 'D', 'S', 'U', 'S', Version(E9,03), Length(16), 0, CRC(4 bytes), ID(4 bytes)...
     const packet = Buffer.alloc(100); 
 
@@ -50,44 +98,85 @@ function sendDataRequest() {
     packet.writeUInt32LE(crcValue, 8); // 填入计算好的 CRC
 
     // 发送给 ESP8266
-    client.send(packet, ESP_PORT, ESP_IP, (err) => {
-        if (err) console.error(err);
-        // console.log(`[UDP] Sent handshake to ${ESP_IP}`);
-    });
+    try {
+        client.send(packet, ESP_PORT, ESP_IP, (err) => {
+            if (err) console.error(err);
+        });
+    } catch (e) {
+        console.error('[UDP Send Error]', e);
+        stopUdpService();
+    }
 }
 
-// 3. 监听 UDP 消息
-client.on('listening', () => {
-    const address = client.address();
-    console.log(`[UDP] Ryujinx Simulator listening on ${address.address}:${address.port}`);
-    
-    // 模拟器行为：每隔 2 秒发送一次“心跳/请求”，防止 ESP8266 断开
-    setInterval(sendDataRequest, 2000);
-    sendDataRequest(); // 立即发送一次
-});
+// ================= UDP 服务控制 =================
 
-client.on('message', (msg, rinfo) => {
-    // 过滤：只处理 DSU 数据包
-    if (msg.length < 16 || msg.toString('ascii', 0, 4) !== 'DSUS') return;
+function startUdpService(ip, port) {
+    if (isRunning) stopUdpService();
 
-    // 解析数据 (和之前一样)
-    const accX = msg.readFloatLE(76);
-    const accY = msg.readFloatLE(80);
-    const accZ = msg.readFloatLE(84);
-    const gyrP = msg.readFloatLE(88);
-    const gyrY = msg.readFloatLE(92);
-    const gyrR = msg.readFloatLE(96);
+    ESP_IP = ip;
+    ESP_PORT = port;
 
-    const dataPacket = {
-        accel: { x: accX, y: accY, z: accZ },
-        gyro: { pitch: gyrP, yaw: gyrY, roll: gyrR }
-    };
+    client = dgram.createSocket('udp4');
 
-    // 转发给网页
-    const jsonStr = JSON.stringify(dataPacket);
-    wss.clients.forEach(c => {
-        if (c.readyState === WebSocket.OPEN) c.send(jsonStr);
+    client.on('listening', () => {
+        const address = client.address();
+        console.log(`[UDP] Ryujinx Simulator listening on ${address.address}:${address.port}`);
+        
+        isRunning = true;
+        broadcastStatus();
+
+        // 模拟器行为：每隔 2 秒发送一次“心跳/请求”，防止 ESP8266 断开
+        handshakeInterval = setInterval(sendDataRequest, 2000);
+        sendDataRequest(); // 立即发送一次
     });
-});
 
-client.bind(LOCAL_PORT);
+    client.on('message', (msg, rinfo) => {
+        // 过滤：只处理 DSU 数据包
+        if (msg.length < 16 || msg.toString('ascii', 0, 4) !== 'DSUS') return;
+
+        // 解析数据 (和之前一样)
+        const accX = msg.readFloatLE(76);
+        const accY = msg.readFloatLE(80);
+        const accZ = msg.readFloatLE(84);
+        const gyrP = msg.readFloatLE(88);
+        const gyrY = msg.readFloatLE(92);
+        const gyrR = msg.readFloatLE(96);
+
+        const dataPacket = {
+            type: 'motion',
+            accel: { x: accX, y: accY, z: accZ },
+            gyro: { pitch: gyrP, yaw: gyrY, roll: gyrR }
+        };
+
+        // 转发给网页
+        const jsonStr = JSON.stringify(dataPacket);
+        wss.clients.forEach(c => {
+            if (c.readyState === WebSocket.OPEN) c.send(jsonStr);
+        });
+    });
+
+    client.on('error', (err) => {
+        console.error('[UDP Error]', err);
+        stopUdpService();
+    });
+
+    client.bind(LOCAL_PORT);
+}
+
+function stopUdpService() {
+    if (handshakeInterval) clearInterval(handshakeInterval);
+    if (client) {
+        client.close();
+        client = null;
+    }
+    isRunning = false;
+    broadcastStatus();
+    console.log('[UDP] Service Stopped');
+}
+
+function broadcastStatus() {
+    const msg = JSON.stringify({ type: 'status', running: isRunning, ip: ESP_IP, port: ESP_PORT });
+    wss.clients.forEach(c => {
+        if (c.readyState === WebSocket.OPEN) c.send(msg);
+    });
+}

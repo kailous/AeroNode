@@ -37,6 +37,11 @@
 - **校准**：打开 `calibrate/calibrate.ino`，按串口提示完成校准。
 - **发送数据**：打开 `gyro/gyro.ino`，配置 WiFi/端口并烧录。
 
+## 字体
+- 项目使用自定义字体 `U8g2CustomFont.h`，确保已包含在项目中。
+- 字体文件 `u8g2_font_35006991a13a986eaa75172c1a9cb70e.h` 已被替换为 `U8g2CustomFont.h`。
+- 字体转换工具：https://stonez56.com/u8g2/index.php#converter
+
 ## 本地备份策略
 - `backup/`：历史代码与草稿，仅本地保存，不参与提交。
 - `libraries/`：Arduino 本地库目录，同样已忽略。
