@@ -12,8 +12,8 @@ float    accXF, accYF, accZF, gyrPF, gyrYF, gyrRF; // 浮点姿态数据
  * 用户自定义数据
 ****************************************************************************************/
 
-char wifiSSID[] = "Kailous_2.4G";
-char wifiPass[] = "Kailous309999811";
+char wifiSSID[] = "RAD";
+char wifiPass[] = "rad666888";
 uint16_t udpPort = 26760;
 
 const uint8_t mpuSda = 14, mpuScl = 12; // MPU6050 I2C GPIO 引脚连接

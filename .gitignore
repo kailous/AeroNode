@@ -3,6 +3,7 @@ libraries/
 libraries
 
 backup/
+podtest/node_modules
 
 # macOS
 .DS_Store

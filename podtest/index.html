@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>Ryujinx Web Viewer (Color Swapped)</title>
+    <style>
+        body { margin: 0; background: #1a1a1a; color: #fff; font-family: "Consolas", monospace; overflow: hidden; }
+        
+        #ui { 
+            position: absolute; top: 10px; left: 10px; z-index: 10; 
+            background: rgba(0, 0, 0, 0.9); 
+            padding: 15px; 
+            border: 1px solid #555; 
+            border-radius: 4px;
+            width: 200px;
+        }
+
+        .title { margin-bottom: 10px; border-bottom: 1px solid #444; padding-bottom: 5px; font-weight: bold; color: #ddd; }
+        .row { display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 13px; }
+        
+        /* UI 颜色定义 */
+        .color-x { color: #ff3333; } /* 红 */
+        .color-y { color: #33ff33; } /* 绿 */
+        .color-z { color: #3388ff; } /* 蓝 */
+
+        #indicator { display: inline-block; width: 8px; height: 8px; background: #555; border-radius: 50%; margin-right: 5px; }
+        .active { background: #0f0 !important; box-shadow: 0 0 5px #0f0; }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+    <div id="ui">
+        <div class="title"><span id="indicator"></span> Sensor Data</div>
+        
+        <div class="row color-x"><span>Acc X:</span> <span id="ax">0.00</span></div>
+        <div class="row color-y"><span>Acc Y:</span> <span id="ay">0.00</span></div>
+        <div class="row color-z"><span>Acc Z:</span> <span id="az">0.00</span></div>
+        
+        <hr style="border-color: #333">
+        
+        <div class="row color-x"><span>Pitch:</span> <span id="gp">0.00</span></div>
+        <div class="row color-y"><span>Roll:</span>  <span id="gr">0.00</span></div>
+        <div class="row color-z"><span>Yaw:</span>   <span id="gy">0.00</span></div>
+    </div>
+
+    <script>
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x202020);
+        
+        const gridHelper = new THREE.GridHelper(40, 40, 0x666666, 0x333333);
+        scene.add(gridHelper);
+
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
+        camera.position.set(0, 8, 12); 
+        camera.lookAt(0, 0, 0);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+
+        // ================= 模型 =================
+        const boardGroup = new THREE.Group();
+
+        // PCB
+        const pcb = new THREE.Mesh(
+            new THREE.BoxGeometry(1.8, 0.15, 3.2), 
+            new THREE.MeshBasicMaterial({ color: 0x111111, wireframe: true }) 
+        );
+        boardGroup.add(pcb);
+
+        // USB
+        const usb = new THREE.Mesh(
+            new THREE.BoxGeometry(0.8, 0.25, 0.5),
+            new THREE.MeshBasicMaterial({ color: 0xAAAAAA })
+        );
+        usb.position.set(0, 0.1, 1.7); 
+        boardGroup.add(usb);
+
+        // 芯片
+        const chip = new THREE.Mesh(
+            new THREE.BoxGeometry(1.0, 0.1, 1.0),
+            new THREE.MeshBasicMaterial({ color: 0x333333 })
+        );
+        chip.position.set(0, 0.1, -0.5);
+        boardGroup.add(chip);
+
+        // ===============================================
+        // 【关键修改】坐标轴颜色互换
+        // ===============================================
+        const axesHelper = new THREE.AxesHelper(5);
+        
+        // 获取 AxesHelper 的颜色属性 (它是一个 BufferAttribute)
+        // 顶点顺序: 0,1是X轴; 2,3是Y轴; 4,5是Z轴
+        const colors = axesHelper.geometry.attributes.color;
+
+        // 1. 修改 Y 轴 (原绿色 -> 改为蓝色 0,0,1)
+        colors.setXYZ(2, 0, 0, 1); // 起点
+        colors.setXYZ(3, 0, 0, 1); // 终点
+
+        // 2. 修改 Z 轴 (原蓝色 -> 改为绿色 0,1,0)
+        colors.setXYZ(4, 0, 1, 0); // 起点
+        colors.setXYZ(5, 0, 1, 0); // 终点
+
+        // 告诉 Three.js 颜色已更新
+        colors.needsUpdate = true;
+
+        boardGroup.add(axesHelper);
+        scene.add(boardGroup);
+
+        // ================= 逻辑 =================
+        const ws = new WebSocket('ws://localhost:8080');
+        const indicator = document.getElementById('indicator');
+        
+        let pitch = 0, roll = 0, yaw = 0;
+        const alpha = 0.9;
+
+        ws.onmessage = (e) => {
+            const data = JSON.parse(e.data);
+            
+            // UI 更新
+            document.getElementById('ax').innerText = data.accel.x.toFixed(2);
+            document.getElementById('ay').innerText = data.accel.y.toFixed(2); // 蓝行显示 Y
+            document.getElementById('az').innerText = data.accel.z.toFixed(2); // 绿行显示 Z
+            
+            document.getElementById('gp').innerText = data.gyro.pitch.toFixed(2);
+            document.getElementById('gy').innerText = data.gyro.yaw.toFixed(2);
+            document.getElementById('gr').innerText = data.gyro.roll.toFixed(2);
+
+            indicator.classList.add('active');
+            setTimeout(() => indicator.classList.remove('active'), 50);
+
+            // 姿态解算
+            let accPitch = Math.atan2(data.accel.z, data.accel.y);
+            let accRoll = Math.atan2(data.accel.x, data.accel.y);
+
+            pitch = alpha * pitch + (1 - alpha) * accPitch;
+            roll = alpha * roll + (1 - alpha) * accRoll;
+            yaw += data.gyro.yaw * 0.01 * (Math.PI / 180);
+
+            boardGroup.rotation.x = pitch;
+            boardGroup.rotation.z = -roll; 
+            boardGroup.rotation.y = yaw;
+        };
+
+        function animate() {
+            requestAnimationFrame(animate);
+            renderer.render(scene, camera);
+        }
+        animate();
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+</body>
+</html>
