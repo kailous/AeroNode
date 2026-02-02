@@ -1,6 +1,19 @@
 {
+  "name": "esp8266-dsu-podtest",
+  "version": "1.0.0",
+  "description": "ESP8266 MPU6050 DSU Bridge and Simulator",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js --mode=bridge",
+    "sim": "node app.js --mode=sim",
+    "scan": "node app.js --mode=scan",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": ["esp8266", "websocket", "dsu", "udp"],
+  "author": "",
+  "license": "ISC",
   "dependencies": {
     "crc": "^4.3.2",
-    "ws": "^8.19.0"
+    "ws": "^8.0.0"
   }
 }

@@ -16,6 +16,7 @@
 ├─ calibrate/            # 校准工具（串口交互）
 ├─ gyro/                 # 采样 + UDP 发送示例
 ├─ WebPlugins/           # Web 相关插件/资源
+├─ podtest/              # Node.js WebSocket 测试服务端
 ├─ tools/                # 辅助工具与脚本
 ├─ assistant-notes.md    # AI 协作笔记
 └─ README.md
