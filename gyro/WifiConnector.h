@@ -1,3 +1,5 @@
+#include <LittleFS.h>
+
 #ifndef WIFICONNECTOR_H
 #define WIFICONNECTOR_H
 

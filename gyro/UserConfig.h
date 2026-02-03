@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include "OledDisplay.h"
 #include "SerialPlotter.h"
+#include "WebConfig.h"
 
 // WiFi/UDP config
 extern char wifiSSID[];
@@ -17,3 +18,4 @@ extern const uint8_t mpuAddr;
 // OLED / Serial plotter
 extern OledDisplay display;
 extern SerialPlotter plotter;
+extern WebConfig webConfig;

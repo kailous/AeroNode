@@ -7,6 +7,7 @@
 #include "OledDisplay.h" // OLED 显示模块
 #include "SerialPlotter.h" // 串口示波器模块
 #include "Calibration.h" // 校准参数
+#include "WifiConnector.h" // 引入 WiFi 连接器
 #include "UserConfig.h" // 用户自定义数据
 
 int16_t  accXI, accYI, accZI, gyrPI, gyrYI, gyrRI; // 原始整型姿态数据
@@ -291,19 +292,12 @@ void setup()
   delay(500); // 稍微停留一下，让用户看到启动画面
   display.showConnecting();
 
-  plotter.logWifiConnecting();
-  WiFi.begin(wifiSSID, wifiPass);
-  int wifiRetry = 0;
-  while (WiFi.status() != WL_CONNECTED)
-  {
-    if (wifiRetry++ > 40) { // 20秒超时 (40 * 500ms)
-      display.showWifiTimeoutError();
-      while (true) delay(100); // 停机
-    }
-    delay(500);
-    plotter.printDot();
-  }
-  plotter.logWifiConnected(WiFi.localIP());
+  // 使用 WifiConnector 接管连接逻辑 (包含 AP 模式和超时保护)
+  WifiConnector wifiConnector(wifiSSID, wifiPass);
+  wifiConnector.connect(plotter, display);
+  
+  // 注意：connect() 方法内部已经处理了连接成功后的日志打印
+  // 并且如果超时会进入 AP 模式死循环，不会执行到这里，所以这里一定是连接成功的状态
 
   // WiFi 连接成功，显示网络信息
   display.showServerReady(WiFi.SSID(), WiFi.localIP(), udpPort, WiFi.macAddress());
@@ -326,7 +320,10 @@ void setup()
   if (!mpuConnection) {
     display.showMpuConnectionError();
     // 如果硬件连接失败，停在这里，不再继续执行
-    while (true) { delay(100); }
+    while (true) { 
+      webConfig.handleClient(); // 关键修复：即使硬件报错，也要保持 WebUI 可用
+      delay(10); 
+    }
   }
 
   mpu.setFullScaleGyroRange(gyroSens); // 设置陀螺仪灵敏度
@@ -438,4 +435,7 @@ void loop()
     display.showDeepSleep();
     ESP.deepSleep(0);
   }
+
+  // 处理 Web 配置请求 (保持 AP 访问能力)
+  webConfig.handleClient();
 }

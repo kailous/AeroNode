@@ -1,0 +1,13 @@
+<!DOCTYPE html><html><head><meta name='viewport' content='width=device-width, initial-scale=1'>
+<style>body{font-family:sans-serif;padding:20px;}input{width:100%;padding:10px;margin:10px 0;box-sizing:border-box;} .btn{padding:10px 20px;background:#007bff;color:white;border:none;cursor:pointer;}</style></head>
+<body><h2>IMU Pod Setup</h2>
+<p><strong>Status:</strong> {STATUS}</p>
+<p><strong>IP:</strong> {IP}</p>
+<p><strong>RSSI:</strong> {RSSI}</p>
+<hr>
+<form action='/save' method='POST'>
+SSID:<br><input type='text' name='s' placeholder='SSID' value='{SSID}'><br>
+Password:<br>
+<input type='password' name='p' placeholder='Password'><br>
+<input type='submit' class='btn' value='Save & Restart'>
+</form></body></html>

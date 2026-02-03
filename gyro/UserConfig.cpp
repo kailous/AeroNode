@@ -13,3 +13,5 @@ OledDisplay display(4, 5);
 
 // Serial plotter (disabled by default, set true for debugging)
 SerialPlotter plotter(false);
+
+WebConfig webConfig;

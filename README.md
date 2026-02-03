@@ -47,5 +47,15 @@
 - `backup/`：历史代码与草稿，仅本地保存，不参与提交。
 - `libraries/`：Arduino 本地库目录，同样已忽略。
 
+## 故障排除 (Troubleshooting)
+
+如果 OLED 屏幕显示错误页面，请参考以下错误代码进行排查：
+
+| 错误代码 (Code) | 错误信息 (Message) | 可能原因 (Possible Causes) | 解决方案 (Solutions) |
+| :--- | :--- | :--- | :--- |
+| **E-01** | MPU Error | **IMU 传感器连接失败**<br>1. MPU6050 模块未连接<br>2. SDA/SCL 接线松动或接反<br>3. 模块供电异常 | 1. 检查 D1 (SCL) 和 D2 (SDA) 接线是否牢固<br>2. 确认 MPU6050 有 3.3V/5V 供电<br>3. 尝试按下 Reset 键重启设备 |
+| **(无)** | WiFi Timeout | **WiFi 连接超时**<br>1. SSID 或密码错误<br>2. 路由器信号太弱 | 1. 检查 `UserConfig.cpp` 中的 WiFi 配置<br>2. 靠近路由器重试 |
+| **(无)** | AP Config | **配网模式**<br>设备无法连接 WiFi，已自动开启热点 | 1. 电脑/手机连接屏幕显示的 SSID<br>2. 浏览器访问显示的 IP 地址<br>3. 进入 WebUI 配置网络 |
+
 ## AI 协作笔记
 - 建议在 `assistant-notes.md` 里记录接线、校准结果、改动历史等关键上下文，方便 AI 助手快速接手。
