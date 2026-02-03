@@ -27,25 +27,14 @@ void WebConfig::begin() {
             }
         }
         
-        // 2. 如果文件不存在或读取失败，使用内置默认模板 (Fallback)
+        // 2. 如果文件读取失败，返回错误提示
         if (html.length() == 0) {
-            html = F("<!DOCTYPE html><html><head><meta name='viewport' content='width=device-width, initial-scale=1'>"
-            "<style>body{font-family:sans-serif;padding:20px;}input{width:100%;padding:10px;margin:10px 0;box-sizing:border-box;} .btn{padding:10px 20px;background:#007bff;color:white;border:none;cursor:pointer;}</style></head>"
-            "<body><h2>IMU Pod Setup</h2>"
-            "<p><strong>Status:</strong> {STATUS}</p>"
-            "<p><strong>IP:</strong> {IP}</p>"
-            "<p><strong>RSSI:</strong> {RSSI}</p>"
-            "<hr>"
-            "<form action='/save' method='POST'>"
-            "SSID:<br><input type='text' name='s' placeholder='SSID' value='{SSID}'><br>"
-            "Password:<br>"
-            "<input type='password' name='p' placeholder='Password'><br>"
-            "<input type='submit' class='btn' value='Save & Restart'>"
-            "</form></body></html>");
+            server.send(500, "text/plain", "Error: index.html not found in LittleFS");
+            return;
         }
 
         // 3. 准备动态数据
-        String statusVal = (WiFi.status() == WL_CONNECTED) ? "<span style='color:green'>Connected</span>" : "<span style='color:red'>Disconnected</span>";
+        String statusVal = (WiFi.status() == WL_CONNECTED) ? "Connected" : "Disconnected";
         String ipVal = (WiFi.status() == WL_CONNECTED) ? WiFi.localIP().toString() : "-";
         String rssiVal = (WiFi.status() == WL_CONNECTED) ? String(WiFi.RSSI()) + " dBm" : "-";
 
@@ -86,6 +75,25 @@ void WebConfig::begin() {
     // 捕获所有未定义的请求 (Captive Portal 关键)
     // 无论手机请求 /generate_204 还是其他地址，都重定向到首页
     server.onNotFound([this]() {
+        // 1. 尝试从文件系统加载静态资源 (img, js, css 等)
+        if (_fsMounted) {
+            String path = server.uri();
+            if (LittleFS.exists(path)) {
+                String contentType = "text/plain";
+                if (path.endsWith(".css")) contentType = "text/css";
+                else if (path.endsWith(".js")) contentType = "application/javascript";
+                else if (path.endsWith(".png")) contentType = "image/png";
+                else if (path.endsWith(".jpg")) contentType = "image/jpeg";
+                else if (path.endsWith(".ico")) contentType = "image/x-icon";
+                
+                File file = LittleFS.open(path, "r");
+                server.streamFile(file, contentType);
+                file.close();
+                return;
+            }
+        }
+
+        // 2. 如果文件不存在，则执行 Captive Portal 重定向
         server.sendHeader("Location", "/", true);
         server.send(302, "text/plain", "");
     });

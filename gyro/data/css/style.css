@@ -1,0 +1,32 @@
+/* 全局样式 */
+/* 引入root.css */
+@import url('root.css');
+html {
+    margin: 0;
+    padding: 0;
+    background-color: var(--background-color);
+    color: var(--text-color);
+}
+
+body {
+    font-family: sans-serif;
+    padding: 20px;
+}
+
+input {
+    width: 100%;
+    padding: 10px;
+    margin: 10px 0;
+    box-sizing: border-box;
+    background: var(--input-color);
+    color: var(--input-text-color);
+    border: none;
+}
+
+.btn {
+    padding: 10px 20px;
+    background: var(--button-color);
+    color: var(--button-text-color);
+    border: none;
+    cursor: pointer;
+}

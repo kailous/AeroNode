@@ -1,0 +1,26 @@
+
+/* 识别浏览器 */
+@media (prefers-color-scheme: dark) {
+    /* 暗色模式 */
+    :root {
+        --background-color: black;
+        --text-color: white;
+        --button-color: white;
+        --button-text-color: black;
+        --input-color: #333333;
+        --input-text-color: white;
+    }
+}
+
+/* 识别浏览器 */
+@media (prefers-color-scheme: light) {
+    /* 亮色模式 */
+    :root {
+        --background-color: white;
+        --text-color: black;
+        --button-color: black;
+        --button-text-color: white;
+        --input-color: black;
+        --input-text-color: white;
+    }       
+}
