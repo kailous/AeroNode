@@ -9,6 +9,7 @@
         --button-text-color: black;
         --input-color: #333333;
         --input-text-color: white;
+        --input-focus-color: #555555;
     }
 }
 
@@ -22,5 +23,6 @@
         --button-text-color: white;
         --input-color: black;
         --input-text-color: white;
+        --input-focus-color: #333333;
     }       
 }

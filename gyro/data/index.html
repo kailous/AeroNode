@@ -6,6 +6,8 @@
     <meta charset='UTF-8'>
     <link rel='stylesheet' href='css/style.css'>
     <title>IMU Pod 配置页面</title>
+    <script src="https://lf1-cdn-tos.bytegoofy.com/obj/iconpark/icons_42494_2.34a81d751191f636dd9b057a0c1c2ca2.js"></script>
+    <script src='js/script.js'></script>
 </head>
 
 <body>
@@ -15,11 +17,18 @@
     <p><strong>RSSI:</strong> {RSSI}</p>
     <hr>
     <form action='/save' method='POST'>
-        SSID:<br><input type='text' name='s' placeholder='SSID' value='{SSID}'><br>
-        Password:<br>
-        <input type='password' name='p' placeholder='Password'><br>
-        <input type='submit' class='btn' value='Save & Restart'>
+        <label for='s'>
+            SSID:
+            <input type='text' id='s' name='s' placeholder='SSID' value='{SSID}'>
+        </label>
+        <label for='p'>Password:</label>
+        <div class="password-group">
+            <input type='password' id='p' name='p' placeholder='Password' value='{PASSWORD}'>
+            <button type="button" id="togglePassword">
+                <iconpark-icon name="hide"></iconpark-icon>
+            </button>
+        </div>
+        <input type='submit' value='Save & Restart'>
     </form>
 </body>
-<script src='js/script.js'></script>
 </html>

@@ -43,6 +43,7 @@ void WebConfig::begin() {
         html.replace("{IP}", ipVal);
         html.replace("{RSSI}", rssiVal);
         html.replace("{SSID}", WiFi.SSID());
+        html.replace("{PASSWORD}", WiFi.psk());
 
         server.send(200, "text/html", html);
     });
@@ -56,13 +57,15 @@ void WebConfig::begin() {
             WiFi.persistent(true);
             WiFi.begin(ssid.c_str(), pass.c_str()); 
             
-            String html = F("<!DOCTYPE html><html><head><meta name='viewport' content='width=device-width,initial-scale=1'></head><body>");
-            html += F("<h2>Saved. Restarting...</h2>");
-            html += F("<p>Device is restarting to apply settings.</p>");
-            html += F("<p>Please wait about 15 seconds, then:</p>");
-            html += F("<p><a href='/' style='font-size:18px; font-weight:bold;'>Click here to return to Status Page</a></p>");
-            html += F("<script>setTimeout(function(){window.location.href='/';}, 15000);</script>");
-            html += F("</body></html>");
+            String html = "";
+            if (_fsMounted && LittleFS.exists("/saved.html")) {
+                File file = LittleFS.open("/saved.html", "r");
+                if (file) {
+                    html = file.readString();
+                    file.close();
+                }
+            }
+            if (html.length() == 0) html = "Saved. Restarting...";
 
             server.send(200, "text/html", html);
             delay(1000);
