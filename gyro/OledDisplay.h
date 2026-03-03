@@ -42,17 +42,25 @@ public:
     // 显示深度睡眠状态
     void showDeepSleep();
 
+    // 更新电量百分比（0-100）
+    void setBatteryPercent(uint8_t percent);
+
 private:
     U8G2_SSD1306_128X64_NONAME_F_SW_I2C u8g2;
     bool _available = false;
+    uint8_t _batteryPercent = 255; // 255 表示未知
 
     // UI Constants
     static const uint8_t RIGHT_X = 123;
     static const uint8_t LINE_X_START = 5;
     static const uint8_t LINE_X_END = 122;
+    static const uint8_t HEADER_HEIGHT = 15;
+    static const uint8_t BATTERY_AREA_WIDTH = 30;
+    static const uint8_t BATTERY_AREA_X = 128 - BATTERY_AREA_WIDTH;
 
     // Helpers
     void drawHeader();
+    void drawBatteryPercent();
     void drawRightAlignedStr(uint8_t y, const char* str);
     void drawSeparator(uint8_t y);
 };

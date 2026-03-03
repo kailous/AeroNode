@@ -26,10 +26,28 @@ void OledDisplay::drawHeader() {
     if (!_available) return;
     u8g2.setFontMode(1);
     u8g2.setBitmapMode(1);
-    u8g2.drawBox(0, 0, 128, 15);
+    u8g2.drawBox(0, 0, 128, HEADER_HEIGHT);
     u8g2.setDrawColor(2);
     u8g2.setFont(u8g2_font_6x10_tr);
     u8g2.drawStr(5, 11, "IMU Pod");
+}
+
+void OledDisplay::drawBatteryPercent() {
+    if (!_available) return;
+
+    char buf[6];
+    if (_batteryPercent > 100) {
+        snprintf(buf, sizeof(buf), "--%%");
+    } else {
+        snprintf(buf, sizeof(buf), "%u%%", _batteryPercent);
+    }
+
+    // 清除右上角电量区域并绘制百分比
+    u8g2.setDrawColor(1);
+    u8g2.drawBox(BATTERY_AREA_X, 0, BATTERY_AREA_WIDTH, HEADER_HEIGHT);
+    u8g2.setDrawColor(2);
+    u8g2.setFont(u8g2_font_6x10_tr);
+    drawRightAlignedStr(11, buf);
 }
 
 void OledDisplay::drawRightAlignedStr(uint8_t y, const char* str) {
@@ -49,6 +67,7 @@ void OledDisplay::showBooting() {
     u8g2.setDrawColor(1);
     u8g2.drawStr(5, 28, "Booting...");
     u8g2.drawStr(5, 40, "Init Hardware...");
+    drawBatteryPercent();
     u8g2.sendBuffer();
 }
 
@@ -60,6 +79,7 @@ void OledDisplay::showConnecting() {
     u8g2.setDrawColor(1);
     u8g2.drawStr(5, 28, "Connecting...");
     u8g2.drawStr(5, 40, "Please wait...");
+    drawBatteryPercent();
     u8g2.sendBuffer();
 }
 
@@ -79,10 +99,11 @@ void OledDisplay::showError(const String& message, const char* errorCode) {
     u8g2.drawStr(5, 46, message.c_str());
 
     if (errorCode) {
-        u8g2.drawStr(5, 59, errorCode);
+    u8g2.drawStr(5, 59, errorCode);
     }
 
     drawSeparator(33);
+    drawBatteryPercent();
 
     u8g2.sendBuffer();
 }
@@ -114,6 +135,7 @@ void OledDisplay::showAPMode(const char* ssid, const char* password) {
     
     u8g2.setDrawColor(2);
     u8g2.drawXBMP(116, 4, 7, 8, image_Rpc_active_bits);
+    drawBatteryPercent();
 
     u8g2.sendBuffer();
 }
@@ -135,6 +157,7 @@ void OledDisplay::showAPConfig(const String& ssid, const IPAddress& ip) {
     drawRightAlignedStr(59, buf);
 
     drawSeparator(33);
+    drawBatteryPercent();
 
     u8g2.sendBuffer();
 }
@@ -163,6 +186,7 @@ void OledDisplay::showServerReady(const String& ssid, const IPAddress& ip, uint1
     u8g2.setDrawColor(2);
     u8g2.drawXBMP(116, 4, 7, 8, image_Rpc_active_bits);
     u8g2.drawXBMP(103, 4, 7, 8, image_BLE_beacon_bits);
+    drawBatteryPercent();
     
     u8g2.sendBuffer();
 }
@@ -188,6 +212,7 @@ void OledDisplay::showClientConnected(const IPAddress& remoteIp) {
     u8g2.drawStr(5, 59, buf);
 
     drawSeparator(33);
+    drawBatteryPercent();
 
     u8g2.sendBuffer();
 }
@@ -199,5 +224,17 @@ void OledDisplay::showDeepSleep() {
 
     u8g2.setDrawColor(1);
     u8g2.drawStr(5, 28, "Deep Sleep...");
+    drawBatteryPercent();
+    u8g2.sendBuffer();
+}
+
+void OledDisplay::setBatteryPercent(uint8_t percent) {
+    if (!_available) return;
+
+    if (percent > 100) percent = 100;
+    if (_batteryPercent == percent) return;
+
+    _batteryPercent = percent;
+    drawBatteryPercent();
     u8g2.sendBuffer();
 }

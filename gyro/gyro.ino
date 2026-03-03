@@ -6,12 +6,61 @@
 #include "CRC32.h"   // 作者：bakercp，https://github.com/bakercp/CRC32
 #include "OledDisplay.h" // OLED 显示模块
 #include "SerialPlotter.h" // 串口示波器模块
+#include "BatteryMonitor.h" // 电量监测模块
 #include "Calibration.h" // 校准参数
 #include "WifiConnector.h" // 引入 WiFi 连接器
 #include "UserConfig.h" // 用户自定义数据
 
 int16_t  accXI, accYI, accZI, gyrPI, gyrYI, gyrRI; // 原始整型姿态数据
 float    accXF, accYF, accZF, gyrPF, gyrYF, gyrRF; // 浮点姿态数据
+
+// 电量监测参数（可按需调整）
+const uint8_t  batteryAdcPin = A0;
+const uint8_t  batterySampleCount = 10;
+const float    batteryAdcRefVoltage = 3.3f; // A0 参考电压
+// 按 5.1V 输入电压 & 1:1 分压的理论值设置
+const float    batteryDividerRatio = 2.0f;  // 100k/100k 分压 => 实际电压 = A0 * 2
+const float    batteryVoltageEmpty = 4.0f;  // 空电压阈值 (可调整)
+const float    batteryVoltageFull  = 5.1f;  // 满电压阈值 (可调整)
+const uint32_t batteryUpdateIntervalMs = 1000;
+
+BatteryMonitor batteryMonitor(
+  batteryAdcPin,
+  batteryAdcRefVoltage,
+  batteryDividerRatio,
+  batterySampleCount,
+  batteryVoltageEmpty,
+  batteryVoltageFull
+);
+
+uint32_t batteryUpdateTimeMs = 0;
+uint8_t  batteryPercent = 255;
+
+static void updateBatteryIfNeeded()
+{
+  if (millis() - batteryUpdateTimeMs < batteryUpdateIntervalMs)
+    return;
+
+  batteryUpdateTimeMs = millis();
+
+  BatteryReading reading = batteryMonitor.read();
+
+  Serial.print("ADC raw: "); Serial.print(reading.raw);
+  Serial.print(" | A0: "); Serial.print(reading.a0Voltage, 3); Serial.print(" V");
+  Serial.print(" | 5V: "); Serial.print(reading.vinVoltage, 3); Serial.println(" V");
+
+  if (reading.percent != batteryPercent)
+  {
+    batteryPercent = reading.percent;
+    display.setBatteryPercent(batteryPercent);
+  }
+}
+
+// 提供给 WiFi 连接流程中的空闲回调
+void onIdleTick()
+{
+  updateBatteryIfNeeded();
+}
 
 /***************************************************************************************
  *
@@ -289,6 +338,12 @@ void setup()
   // 初始化 OLED
   display.begin();
   display.showBooting();
+  // 先读取一次电量，确保启动/连接界面不显示 "--%"
+  {
+    BatteryReading bootReading = batteryMonitor.read();
+    batteryPercent = bootReading.percent;
+    display.setBatteryPercent(batteryPercent);
+  }
   delay(500); // 稍微停留一下，让用户看到启动画面
   display.showConnecting();
 
@@ -435,6 +490,9 @@ void loop()
     display.showDeepSleep();
     ESP.deepSleep(0);
   }
+
+  // 5. 电量监测（每 1 秒更新）
+  updateBatteryIfNeeded();
 
   // 处理 Web 配置请求 (保持 AP 访问能力)
   webConfig.handleClient();

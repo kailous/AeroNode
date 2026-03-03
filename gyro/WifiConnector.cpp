@@ -2,6 +2,8 @@
 #include "WebConfig.h"
 #include "UserConfig.h"
 
+extern void onIdleTick();
+
 WifiConnector::WifiConnector(const char* ssid, const char* password)
     : _ssid(ssid), _password(password) {
 }
@@ -28,6 +30,7 @@ void WifiConnector::connect(SerialPlotter& plotter, OledDisplay& display) {
     while (true) {
         // 全局任务：处理 Web 请求和系统后台任务
         webConfig.handleClient();
+        onIdleTick();
         yield();
 
         switch (currentState) {
@@ -99,6 +102,7 @@ void WifiConnector::connect(SerialPlotter& plotter, OledDisplay& display) {
                 // 3. 进入死循环驻留，不再返回外层状态机
                 while (true) {
                     webConfig.handleClient();
+                    onIdleTick();
                     yield();
                 }
                 break;
