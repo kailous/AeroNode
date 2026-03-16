@@ -1,0 +1,27 @@
+# IMU Pod WebUI Refactor
+
+The WebUI has been entirely refactored to support tuning the extensive list of gyroscope and system parameters, complete with a modern UI and persistent backend storage.
+
+## UI Changes
+The frontend structure in `gyro/data` was rewritten to support a categorized, tab-based layout. This avoids cluttering the interface while adding significantly more configuration options. 
+- **Network Tab**: SSID, Password, UDP Port.
+- **Air Mouse Tab**: Sensitivity, Deadzone, Gyro X/Z Offsets.
+- **Calibration Tab**: Accelerometer/Gyroscope Hardware Offsets (X, Y, Z), Gyro Y Drift Compensation.
+- **System Tab**: Battery Full/Empty Voltages, ADC Divider Ratio, Debug Log Toggle.
+- Standardized styling via modular CSS (`style.css`), utilizing custom fonts (Inter) and IconPark elements.
+
+## Architecture/Backend Changes
+- **ESP32 Preferences (Flash Storage)**: The firmware now securely saves all these configurations permanently using the `Preferences` library (to flash namespace `"imupod"`). Configurations are loaded during `setup()` and automatically applied.
+- **Dynamic Variable Refactoring**: Variables that were previously defined as `const` or `static const` across files (like `batteryVoltageEmpty`, `offsetTable`, `sensitivity`) have been moved to `UserConfig.h` as mutable, `extern` parameters.
+- **BatteryMonitor Update**: The `BatteryMonitor` module was enhanced with a `setParams()` method so its scaling factors can be reconfigured dynamically at runtime without needing a hard restart to take effect initially.
+- **Improved WebConfig Processing**: Rebuilt the `/` index generation logic to inject all 18 parameters directly into the HTML markup placeholders (e.g., `{SENSITIVITY}`). The `/save` handler parse all POST body bounds and subsequently calls the new `saveConfig()` routine before triggering an `ESP.restart()`.
+
+## Validation Results
+- The C++ backend mapping logic corresponds flawlessly with the HTML forms.
+- *Testing Constraint:* Automated browser flow testing isn't possible because the HTML expects LittleFS ESP32 backend injection (which only runs correctly on the device). 
+
+## User Actions Required
+Please flash the newly modified `gyro` project to your ESP32 device:
+1. Make sure to choose **ESP32 Sketch Data Upload** tool if needed to push `/data` (if changed), though `LittleFS` is handled automatically in platformio depending on your IDE routing.
+2. Connect to the `"IMU_Air_Mouse"` Wi-Fi and navigate to the portal page (`192.168.4.1`).
+3. Verify that the new modern Tabs interface appears and modifying parameters like *Sensitivity* persist after clicking Save.

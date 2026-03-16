@@ -5,30 +5,143 @@
     <meta name='viewport' content='width=device-width, initial-scale=1'>
     <meta charset='UTF-8'>
     <link rel='stylesheet' href='css/style.css'>
-    <title>IMU Pod 配置页面</title>
-    <script src="https://lf1-cdn-tos.bytegoofy.com/obj/iconpark/icons_42494_2.34a81d751191f636dd9b057a0c1c2ca2.js"></script>
-    <script src='js/script.js'></script>
+    <title>IMU Pod 配置</title>
+    <script
+        src="https://lf1-cdn-tos.bytegoofy.com/obj/iconpark/icons_42494_2.34a81d751191f636dd9b057a0c1c2ca2.js"></script>
 </head>
 
 <body>
-    <h2>IMU Pod 配置页面</h2>
-    <p><strong>Status:</strong> {STATUS}</p>
-    <p><strong>IP:</strong> {IP}</p>
-    <p><strong>RSSI:</strong> {RSSI}</p>
-    <hr>
-    <form action='/save' method='POST'>
-        <label for='s'>
-            SSID:
-            <input type='text' id='s' name='s' placeholder='SSID' value='{SSID}'>
-        </label>
-        <label for='p'>Password:</label>
-        <div class="password-group">
-            <input type='password' id='p' name='p' placeholder='Password' value='{PASSWORD}'>
-            <button type="button" id="togglePassword">
-                <iconpark-icon name="hide"></iconpark-icon>
-            </button>
+    <div class="container">
+        <h2>IMU Pod 配置</h2>
+        <div class="status-bar">
+            <span>状态: {STATUS}</span> | <span>IP: {IP}</span> | <span>RSSI: {RSSI}</span>
         </div>
-        <input type='submit' value='Save & Restart'>
-    </form>
+
+        <div class="tabs">
+            <button class="tab-btn active" onclick="openTab(event, 'network')">网络</button>
+            <button class="tab-btn" onclick="openTab(event, 'airmouse')">空鼠</button>
+            <button class="tab-btn" onclick="openTab(event, 'calibration')">校准</button>
+            <button class="tab-btn" onclick="openTab(event, 'system')">系统</button>
+        </div>
+
+        <form action='/save' method='POST'>
+
+            <!-- Network Tab -->
+            <div id="network" class="tab-content active">
+                <label>SSID:</label>
+                <input type='text' id='s' name='s' placeholder='SSID' value='{SSID}' required>
+
+                <label>密码:</label>
+                <div class="password-group">
+                    <input type='password' id='p' name='p' placeholder='Password' value='{PASSWORD}'>
+                    <button type="button" id="togglePassword">
+                        <iconpark-icon name="hide"></iconpark-icon>
+                    </button>
+                </div>
+
+                <label>UDP 端口:</label>
+                <input type='number' name='udp' placeholder='26760' value='{UDP_PORT}'>
+            </div>
+
+            <!-- Air Mouse Tab -->
+            <div id="airmouse" class="tab-content">
+                <label>蓝牙设备名称:</label>
+                <input type='text' name='ble_name' placeholder='IMU_Air_Mouse' value='{BLE_NAME}' maxlength="31">
+
+                <label>自定义蓝牙 MAC (留空或全0使用硬件保留MAC):</label>
+                <input type='text' name='mac' placeholder='00:00:00:00:00:00' value='{CUSTOM_MAC}' maxlength="17">
+                <hr style="width: 100%; border: 0; border-top: 1px solid var(--input-color); margin: 10px 0;">
+
+                <div class="flex-row">
+                    <label>灵敏度 (Sensitivity):</label>
+                    <input class="small-input" type="number" step="0.1" name="sens" id="sensInput"
+                        value="{SENSITIVITY}">
+                </div>
+                <div class="slider-group">
+                    <input type="range" min="1" max="100" step="0.1" id="sensRange" value='{SENSITIVITY}'>
+                </div>
+
+                <div class="flex-row">
+                    <label>死区 (Deadzone):</label>
+                    <input class="small-input" type="number" step="0.01" name="dead" id="deadInput" value="{DEADZONE}">
+                </div>
+                <div class="slider-group">
+                    <input type="range" min="0.0" max="0.5" step="0.01" id="deadRange" value='{DEADZONE}'>
+                </div>
+
+                <label style="margin-top: 10px;">水平/垂直飘移补偿 (X/Z Offsets):</label>
+                <div class="joystick-container" id="joystickBox">
+                    <div class="joystick-crosshair-x"></div>
+                    <div class="joystick-crosshair-y"></div>
+                    <div class="joystick-knob" id="joystickKnob"></div>
+                </div>
+                <div class="joystick-readout">
+                    <div class="flex-inline">
+                        <label>X:</label>
+                        <input class="small-input" type="number" step="0.1" name="gx_off" id="gx_off"
+                            value="{GYROX_OFFSET}">
+                    </div>
+                    <div class="flex-inline">
+                        <label>Z:</label>
+                        <input class="small-input" type="number" step="0.1" name="gz_off" id="gz_off"
+                            value="{GYROZ_OFFSET}">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Calibration Tab -->
+            <div id="calibration" class="tab-content">
+                <div class="grid-2">
+                    <div>
+                        <label>Acc X 零偏:</label>
+                        <input type='number' name='ax_off' value='{AX_OFF}'>
+                    </div>
+                    <div>
+                        <label>Acc Y 零偏:</label>
+                        <input type='number' name='ay_off' value='{AY_OFF}'>
+                    </div>
+                    <div>
+                        <label>Acc Z 零偏:</label>
+                        <input type='number' name='az_off' value='{AZ_OFF}'>
+                    </div>
+                    <div>
+                        <label>Gyro X 零偏:</label>
+                        <input type='number' name='gx_c_off' value='{GX_C_OFF}'>
+                    </div>
+                    <div>
+                        <label>Gyro Y 零偏:</label>
+                        <input type='number' name='gy_c_off' value='{GY_C_OFF}'>
+                    </div>
+                    <div>
+                        <label>Gyro Z 零偏:</label>
+                        <input type='number' name='gz_c_off' value='{GZ_C_OFF}'>
+                    </div>
+                </div>
+                <label style="margin-top:15px;">Gyro Y 静止漂移补偿:</label>
+                <input type='number' step='0.01' name='gy_drift' value='{GY_DRIFT}'>
+            </div>
+
+            <!-- System Tab -->
+            <div id="system" class="tab-content">
+                <label>电池满电电压 (V):</label>
+                <input type='number' step='0.1' name='bat_f' value='{BAT_FULL}'>
+
+                <label>电池空电电压 (V):</label>
+                <input type='number' step='0.1' name='bat_e' value='{BAT_EMPTY}'>
+
+                <label>ADC分压比例:</label>
+                <input type='number' step='0.1' name='bat_div' value='{BAT_DIV}'>
+
+                <div class="checkbox-container">
+                    <input type='checkbox' id='debug' name='debug' {DEBUG_CHECKED} value='1'>
+                    <label for="debug">启用串口调试输出 (Serial Plotter)</label>
+                </div>
+            </div>
+
+            <input type='submit' value='保存并重启'>
+        </form>
+    </div>
+    <script src='js/script.js'></script>
 </body>
+
 </html>

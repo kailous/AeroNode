@@ -1,5 +1,0 @@
-系统启动中初始化硬件错误连接超时未正在服务就绪端口已数据传输中进入休眠
-ABCDEFGHIJKLMNOPQRSTUVWXYZ
-abcdefghijklmnopqrstuvwxyz
-0123456789
-.:-
